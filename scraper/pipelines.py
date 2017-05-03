@@ -8,13 +8,11 @@
 
 class SmtArticlePipeline(object):
     def process_item(self, item, spider):
-        import pdb
-        pdb.set_trace()
+
         return item
 
 
 class SmtContributorPipeline(object):
     def process_item(self, item, spider):
-        import pdb
-        pdb.set_trace()
+
         return item
