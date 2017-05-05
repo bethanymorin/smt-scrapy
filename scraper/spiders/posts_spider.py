@@ -9,8 +9,7 @@ class SmtStories(CrawlSpider):
         It should store content from article and author (contributor) profile pages
     '''
     name = "stories"
-
-    db_nodes = get_nodes_to_export_from_db(0, limit=10)
+    db_nodes = get_nodes_to_export_from_db(0, limit=None)
     allowed_domains = ["socialmediatoday.com"]
     start_urls = db_nodes.keys()
 

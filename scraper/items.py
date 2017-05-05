@@ -161,7 +161,6 @@ class SmtArticleItem(scrapy.Item):
     story_title = scrapy.Field()
     body = scrapy.Field()
     pub_date = scrapy.Field()
-    topic = scrapy.Field()
     byline = scrapy.Field()
     changed = scrapy.Field()
     contributor_profile_url = scrapy.Field()
@@ -179,7 +178,6 @@ class SmtArticleItem(scrapy.Item):
         self['canonical_url'] = html.head.find('link', rel='canonical')['href']
         self['meta_description'] = get_meta_description(html)
         self['story_title'] = html.body.find('div', property='dc:title').h3.a.text
-        self['topic'] = response.url.split('/')[2]
         (
             self['byline'],
             self['contributor_profile_url'],
