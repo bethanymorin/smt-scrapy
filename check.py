@@ -10,10 +10,15 @@ with open('smt_stories.jl') as result_file:
         line_data = json.loads(line)
         if line_data['url'] not in unique_urls:
             unique_urls.append(line_data['url'])
-        if line_data['page_type'] == 'contributor profile':
-            contributor_count += 1
-        elif line_data['page_type'] == 'article':
             article_count += 1
+        total_count += 1
+
+with open('smt_authors.jl') as result_file:
+    for line in result_file:
+        line_data = json.loads(line)
+        if line_data['url'] not in unique_urls:
+            unique_urls.append(line_data['url'])
+            contributor_count += 1
         total_count += 1
 
 print "%d total pages in file" % total_count

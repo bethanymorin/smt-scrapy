@@ -111,6 +111,8 @@ class SmtContributorProfileItem(scrapy.Item):
     """ Represents the content of a Contributor Profile page as a scrapy Item object
     """
     page_type = scrapy.Field()
+    uid = scrapy.Field()
+    email = scrapy.Field()
     url = scrapy.Field()
     title = scrapy.Field()
     page_title = scrapy.Field()
@@ -125,7 +127,7 @@ class SmtContributorProfileItem(scrapy.Item):
     google_url = scrapy.Field()
     bio = scrapy.Field()
 
-    def process(self, response):
+    def process(self, response, db_data):
         """ Stash different parts of the page in the correct property for this object
         """
         html = BeautifulSoup(response.body, "html.parser")
@@ -143,12 +145,15 @@ class SmtContributorProfileItem(scrapy.Item):
         self['twitter_url'] = social_link_urls['twitter']
         self['linkedin_url'] = social_link_urls['linkedin']
         self['google_url'] = social_link_urls['google']
+        self['email'] = db_data['email']
+        self['uid'] = db_data['uid']
 
 
 class SmtArticleItem(scrapy.Item):
     """ Represents the content of an Article page as a scrapy Item object
     """
     page_type = scrapy.Field()
+    node_id = scrapy.Field()
     url = scrapy.Field()
     title = scrapy.Field()
     canonical_url = scrapy.Field()
@@ -157,10 +162,14 @@ class SmtArticleItem(scrapy.Item):
     body = scrapy.Field()
     pub_date = scrapy.Field()
     topic = scrapy.Field()
-    contributor_profile_url = scrapy.Field()
     byline = scrapy.Field()
+    changed = scrapy.Field()
+    contributor_profile_url = scrapy.Field()
+    contributor_email = scrapy.Field()
+    contributor_uid = scrapy.Field()
+    legacy_content_type = scrapy.Field()
 
-    def process(self, response):
+    def process(self, response, db_data):
         """ Stash different parts of the page in the correct property for this object
         """
         html = BeautifulSoup(response.body, "html.parser")
@@ -177,3 +186,8 @@ class SmtArticleItem(scrapy.Item):
             self['pub_date']
         ) = get_pub_and_author_info(html)
         self['body'] = get_story_body(html)
+        self['changed'] = db_data['changed']
+        self['node_id'] = db_data['nid']
+        self['contributor_email'] = db_data['user_email']
+        self['contributor_uid'] = db_data['uid']
+        self['legacy_content_type'] = db_data['content_type']
