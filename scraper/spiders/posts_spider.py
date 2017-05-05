@@ -10,7 +10,7 @@ class SmtStories(CrawlSpider):
     '''
     name = "stories"
 
-    db_nodes = get_nodes_to_export_from_db(0, limit=1000)
+    db_nodes = get_nodes_to_export_from_db(0, limit=10)
     allowed_domains = ["socialmediatoday.com"]
     start_urls = db_nodes.keys()
 

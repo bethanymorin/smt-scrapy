@@ -66,7 +66,7 @@ def get_nodes_to_export_from_db(changed_epoch, limit=None):
     return nodes
 
 
-def get_author_urls_from_jl(source_file='smt_stories.jl'):
+def get_author_urls_from_jl(source_file='output/stories.jl'):
     author_links = {}
     if os.path.exists(source_file):
         with open(source_file) as file:
