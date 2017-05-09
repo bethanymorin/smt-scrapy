@@ -26,7 +26,7 @@ def get_db_connection():
     return db
 
 
-def get_nodes_to_export_from_db(changed_epoch, limit=None):
+def get_nodes_to_export_from_db(changed_epoch, limit=None, offset=None):
     # this query gets back the identifying information for the posts we want
     # as well as the node and full path URLs that we can use to get the current
     # actual HTML page
@@ -42,12 +42,14 @@ def get_nodes_to_export_from_db(changed_epoch, limit=None):
         "and u.pid=(select pid from url_alias where source = u.source "
         "order by pid desc limit 1) "
         "and n.changed > %d "
-        "order by n.changed DESC "
+        "order by n.changed DESC"
     )
     logging.debug("Query is: %s" % node_query)
     node_query = node_query % changed_epoch
     if limit:
-        node_query = node_query + 'limit %s' % limit
+        node_query = node_query + ' limit %s' % limit
+    if offset:
+        node_query = node_query + ' offset %s' % offset
     node_cursor = db.cursor()
     node_cursor.execute(node_query)
     nodes = {}
@@ -78,3 +80,27 @@ def get_author_urls_from_jl(source_file='output/stories.jl'):
                     'email': data['contributor_email'],
                 }
     return author_links
+
+
+def write_nodes_to_file(nodes, filename):
+    f = open('%s.html' % filename, 'w+')
+    for url in nodes.keys():
+        f.write('<a href="%s">%s</a><br />' % (url, url))
+    f.close()
+
+
+def get_setting_limits():
+    settings = open('.crawl_smt/settings.txt', 'r').read().split(',')
+    limit = int(settings[0])
+    offset = int(settings[1])
+    if limit == 0:
+        limit = None
+    if offset == 0:
+        offset = None
+    return limit, offset
+
+
+def get_out_dir():
+    settings = open('.crawl_smt/settings.txt', 'r').read().split(',')
+    out_dir = settings[2]
+    return out_dir

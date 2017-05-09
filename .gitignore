@@ -1,2 +1,7 @@
 *.jl
 *.zip
+.scrapy
+.crawl_smt
+*.html
+urllog.txt
+
