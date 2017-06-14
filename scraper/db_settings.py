@@ -6,3 +6,5 @@ mysql_port = 30002
 mysql_pw = None
 
 site_url = 'http://www.socialmediatoday.com/'
+
+execution_path = '/Users/bmorin/workspace/smt/smt-scrapy'

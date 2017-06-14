@@ -1,4 +1,3 @@
-import os
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
@@ -9,9 +8,9 @@ from scraper.utils import (
     get_setting_limits,
     get_out_dir,
 )
+from scraper.db_settings import execution_path
 
-this_script_path = os.path.abspath(__file__)
-execution_script_path = this_script_path.replace('/scraper/spiders/posts_spider.py', '')
+execution_script_path = execution_path
 
 
 def update_url_feed(url):
