@@ -9,12 +9,13 @@ from scraper.utils import (
     get_setting_limits,
     get_out_dir,
     get_meta_description,
-    get_pub_and_author_info,
+    get_author_info,
     get_story_body,
     get_author_div_text,
     get_author_headshot_url,
     get_author_website_url,
     get_author_social_urls,
+    get_meta_content,
 )
 from scraper.db_settings import execution_path
 import logging
@@ -85,18 +86,14 @@ class SmtStories(CrawlSpider):
         item['canonical_url'] = html.head.find('link', rel='canonical')['href']
         item['meta_description'] = get_meta_description(html)
         item['story_title'] = html.body.find('div', property='dc:title').h3.a.text
-        (
-            item['byline'],
-            item['contributor_profile_url'],
-            item['pub_date']
-        ) = get_pub_and_author_info(html)
+        item['byline'], item['contributor_profile_url'] = get_author_info(html)
         item['body'] = get_story_body(html)
-        item['changed'] = db_data['changed']
         item['node_id'] = db_data['nid']
         item['contributor_email'] = db_data['user_email']
         item['contributor_uid'] = db_data['uid']
         item['legacy_content_type'] = db_data['content_type']
-
+        item['changed'] = get_meta_content(html, 'article:modified_time', '1776-07-04T06:30:00-00:00')
+        item['pub_date'] = get_meta_content(html, 'article:published_time', '1776-07-04T06:30:00-00:00')
         update_url_feed(response.url, spider=self)
         return item
 

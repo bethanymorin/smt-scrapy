@@ -153,27 +153,24 @@ def get_author_website_url(page):
     return None
 
 
-def get_pub_and_author_info(page):
+def get_author_info(page):
     author_name = None
-    pub_date = None
     author_link = None
-    pub_date_div = page.body.find(
+    pub_div = page.body.find(
         'div',
         {'class': 'field-name-post-date-author-name'}
     )
 
-    if pub_date_div:
-        author_name = pub_date_div.p.a.text
-        pub_date = pub_date_div.p.text.replace(author_name, '').strip()
-        author_link = pub_date_div.p.a['href']
-    return author_name, author_link, pub_date
+    if pub_div:
+        author_name = pub_div.p.a.text
+        author_link = pub_div.p.a['href']
+    return author_name, author_link
 
 
 def get_author_social_urls(page):
     social_network_link_ids = [
         'facebook',
         'twitter',
-        'linkedin',
         'google',
     ]
     social_network_links = {}
@@ -204,3 +201,11 @@ def get_story_body(page):
     body_div = page.body.find('div', {'class': 'field-name-body'})
     body_content_div = body_div.find('div', {'property': 'content:encoded'})
     return printable(body_content_div.decode_contents(formatter="html"))
+
+
+def get_meta_content(html, property_name, default_return):
+    meta_property = html.head.find('meta', {'property': property_name})
+    if meta_property:
+        content = meta_property.get('content', default_return)
+        return content
+    return default_return
