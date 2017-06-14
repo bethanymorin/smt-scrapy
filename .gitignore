@@ -4,4 +4,4 @@
 .crawl_smt
 *.html
 urllog.txt
-
+*log

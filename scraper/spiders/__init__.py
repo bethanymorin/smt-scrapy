@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
@@ -7,29 +8,57 @@ from scraper.utils import (
     write_nodes_to_file,
     get_setting_limits,
     get_out_dir,
+    get_meta_description,
+    get_pub_and_author_info,
+    get_story_body,
+    get_author_div_text,
+    get_author_headshot_url,
+    get_author_website_url,
+    get_author_social_urls,
 )
 from scraper.db_settings import execution_path
+import logging
+
+
+out_dir = get_out_dir()
+
+logFormatter = logging.Formatter("%(asctime)s\t[%(levelname)s]\t%(message)s")
+rootLogger = logging.getLogger()
+
+logging.basicConfig(level=logging.DEBUG)
+fileHandler = logging.FileHandler('%s/log' % out_dir)
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
 
 execution_script_path = execution_path
 
 
-def update_url_feed(url):
-    f = open('urllog.txt', 'ab+')
-    f.write(url + '\n')
-    f.close()
+def update_url_feed(url, spider):
+    logging.info("parsed url: %s" % url)
 
 
 class SmtStories(CrawlSpider):
-    ''' CrawlSpider class for crawling the socialmediatoday.com site
+    ''' CrawlSpider class for crawling the socialmediatoday.com site story pages
 
-        It should store content from article and author (contributor) profile pages
+        Crawler is initialized based on command line input, see READEM for
+        details and instructions
     '''
     name = "stories"
+
+    # get database parameters
     limit, offset = get_setting_limits()
+
+    # query for the URLs for nodes to scrape in this run
     db_nodes = get_nodes_to_export_from_db(0, limit=limit, offset=offset)
+
+    # write the URLS for stories to scrape to a local file
     write_nodes_to_file(db_nodes, 'articles')
+
     allowed_domains = ["socialmediatoday.com"]
+
+    # set start URL to the file we wrote
     start_urls = ["file://%s/articles.html" % execution_script_path]
+
     rules = [
         Rule(
             # article page
@@ -47,9 +76,28 @@ class SmtStories(CrawlSpider):
     # handle an article page here
     def parse_article_item(self, response):
         db_data = self.db_nodes[response.url]
+        html = BeautifulSoup(response.body, "html.parser")
+
         item = SmtArticleItem()
-        item.process(response, db_data)
-        update_url_feed(response.url)
+        item['page_type'] = 'article'
+        item['url'] = response.url
+        item['title'] = html.head.title.text
+        item['canonical_url'] = html.head.find('link', rel='canonical')['href']
+        item['meta_description'] = get_meta_description(html)
+        item['story_title'] = html.body.find('div', property='dc:title').h3.a.text
+        (
+            item['byline'],
+            item['contributor_profile_url'],
+            item['pub_date']
+        ) = get_pub_and_author_info(html)
+        item['body'] = get_story_body(html)
+        item['changed'] = db_data['changed']
+        item['node_id'] = db_data['nid']
+        item['contributor_email'] = db_data['user_email']
+        item['contributor_uid'] = db_data['uid']
+        item['legacy_content_type'] = db_data['content_type']
+
+        update_url_feed(response.url, spider=self)
         return item
 
 
@@ -77,7 +125,26 @@ class SmtAuthors(CrawlSpider):
     # handle a contributor profile page here
     def parse_author_item(self, response):
         db_data = self.author_info[response.url]
+        html = BeautifulSoup(response.body, "html.parser")
+
         item = SmtContributorProfileItem()
-        item.process(response, db_data)
-        update_url_feed(response.url)
+        item['page_type'] = 'contributor profile'
+        item['url'] = response.url
+        item['bio'] = get_author_div_text(html, 'field-name-field-user-biography')
+        item['fullname'] = get_author_div_text(html, 'field-name-user-full-name')
+        item['company_name'] = get_author_div_text(html, 'field-name-field-user-company-name')
+        item['job_title'] = get_author_div_text(html, 'field-name-field-user-job-title')
+        item['headshot_url'] = get_author_headshot_url(html)
+        item['website'] = get_author_website_url(html)
+
+        social_link_urls = get_author_social_urls(html)
+        item['facebook_url'] = social_link_urls['facebook']
+        item['twitter_url'] = social_link_urls['twitter']
+        item['linkedin_url'] = social_link_urls['linkedin']
+        item['google_url'] = social_link_urls['google']
+        item['email'] = db_data['email']
+        item['uid'] = db_data['uid']
+
+        update_url_feed(response.url, spider=self)
+
         return item

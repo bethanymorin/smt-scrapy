@@ -3,6 +3,10 @@ import json
 import datetime
 import argparse
 import os
+import logging
+
+logFormatter = logging.Formatter("%(asctime)s\t[%(levelname)s]\t%(message)s")
+rootLogger = logging.getLogger()
 
 DEFAULT_LIMIT = 1000
 DEFAULT_OFFSET = 0
@@ -36,6 +40,15 @@ offset = int(args.offset or DEFAULT_OFFSET)
 end = offset + limit
 out_dir = 'output/%s-%s' % (offset, end)
 
+logging.basicConfig(level=logging.DEBUG)
+fileHandler = logging.FileHandler('%s/log' % out_dir)
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+
+logging.info(" >>>>>>>>>>>>>>>>>> START")
+logging.info("start record: %d" % offset)
+logging.info("end record: %d" % end)
+
 if not os.path.exists('.crawl_smt'):
     os.makedirs('.crawl_smt')
 settings_file = open('.crawl_smt/settings.txt', 'w+')
@@ -52,11 +65,15 @@ outfile_author = '%s/authors.jl' % out_dir
 
 
 first_commad = 'scrapy crawl stories --output=%s --output-format=jsonlines' % outfile_story
+logging.info("running command: `%s`" % first_commad)
+
 process = subprocess.Popen(first_commad, shell=True)
 process.wait()
 print process.returncode
 
 second_commad = 'scrapy crawl authors --output=%s --output-format=jsonlines' % outfile_author
+logging.info("running command: `%s`" % second_commad)
+
 process = subprocess.Popen(second_commad, shell=True)
 process.wait()
 print process.returncode
@@ -78,6 +95,7 @@ try:
                 article_count += 1
 except Exception:
     print "couldn't open stories.jl"
+    logging.error("couldn't open stories.jl")
 
 try:
     with open(outfile_author) as result_file:
@@ -88,9 +106,11 @@ try:
                 contributor_count += 1
 except Exception:
     print "couldn't open authors.jl"
+    logging.error("couldn't open authors.jl")
 
 
-print "%d unique urls scraped" % len(unique_urls)
-print "%d articles parsed" % article_count
-print "%d profiles parsed" % contributor_count
-print "Total time: %s" % total_time
+logging.info("%d unique urls scraped" % len(unique_urls))
+logging.info("%d articles parsed" % article_count)
+logging.info("%d profiles parsed" % contributor_count)
+logging.info("Total time: %s" % total_time)
+logging.info(" >>>>>>>>>>>>>>>>>> END\n")
