@@ -40,15 +40,6 @@ offset = int(args.offset or DEFAULT_OFFSET)
 end = offset + limit
 out_dir = 'output/%s-%s' % (offset, end)
 
-logging.basicConfig(level=logging.DEBUG)
-fileHandler = logging.FileHandler('%s/log' % out_dir)
-fileHandler.setFormatter(logFormatter)
-rootLogger.addHandler(fileHandler)
-
-logging.info(" >>>>>>>>>>>>>>>>>> START")
-logging.info("start record: %d" % offset)
-logging.info("end record: %d" % end)
-
 if not os.path.exists('.crawl_smt'):
     os.makedirs('.crawl_smt')
 settings_file = open('.crawl_smt/settings.txt', 'w+')
@@ -57,6 +48,15 @@ settings_file.close()
 
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
+
+logging.basicConfig(level=logging.DEBUG)
+fileHandler = logging.FileHandler('%s/log' % out_dir)
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+
+logging.info(" >>>>>>>>>>>>>>>>>> START")
+logging.info("start record: %d" % offset)
+logging.info("end record: %d" % end)
 
 starttime = datetime.datetime.now()
 
