@@ -171,6 +171,7 @@ def get_author_social_urls(page):
     social_network_link_ids = [
         'facebook',
         'twitter',
+        'linkedin',
         'google',
     ]
     social_network_links = {}
