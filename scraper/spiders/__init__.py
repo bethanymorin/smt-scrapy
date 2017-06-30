@@ -85,7 +85,7 @@ class SmtStories(CrawlSpider):
         item['title'] = html.head.title.text
         item['canonical_url'] = html.head.find('link', rel='canonical')['href']
         item['meta_description'] = get_meta_description(html)
-        item['story_title'] = html.body.find('div', property='dc:title').h3.a.text
+        item['story_title'] = html.body.find('section', id='section-content').find('div', property="dc:title").h3.text
         item['byline'], item['contributor_profile_url'] = get_author_info(html)
         item['body'] = get_story_body(html)
         item['node_id'] = db_data['nid']

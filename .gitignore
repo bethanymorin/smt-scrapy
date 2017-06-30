@@ -5,3 +5,5 @@
 *.html
 urllog.txt
 *log
+.DS_Store
+*.pyc

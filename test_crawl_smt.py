@@ -1,3 +1,6 @@
+# this is just crawl_smt + some stuff to track the number of titles
+# and story titles
+
 import subprocess
 import json
 import datetime
@@ -83,6 +86,8 @@ endtime = datetime.datetime.now()
 total_time = endtime - starttime
 
 unique_urls = []
+unique_titles = []
+unique_story_titles = []
 contributor_count = 0
 article_count = 0
 
@@ -93,6 +98,10 @@ try:
             if line_data['url'] not in unique_urls:
                 unique_urls.append(line_data['url'])
                 article_count += 1
+            unique_titles.append(line_data['title'])
+            unique_story_titles.append(line_data['story_title'])
+        unique_titles = set(unique_titles)
+        unique_story_titles = set(unique_story_titles)
 except Exception:
     print "couldn't open stories.jl"
     logging.error("couldn't open stories.jl")
@@ -108,9 +117,10 @@ except Exception:
     print "couldn't open authors.jl"
     logging.error("couldn't open authors.jl")
 
-
 logging.info("%d unique urls scraped" % len(unique_urls))
 logging.info("%d articles parsed" % article_count)
+logging.info("%d titles" % len(unique_titles))
+logging.info("%d story titles" % len(unique_story_titles))
 logging.info("%d profiles parsed" % contributor_count)
 logging.info("Total time: %s" % total_time)
 logging.info(" >>>>>>>>>>>>>>>>>> END\n")
