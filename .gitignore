@@ -6,5 +6,4 @@
 urllog.txt
 *log
 .DS_Store
-tox.ini
 *.pyc
