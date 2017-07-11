@@ -17,7 +17,7 @@ from scraper.utils import (
     get_author_social_urls,
     get_meta_content,
 )
-from scraper.db_settings import execution_path
+from scraper.db_settings import execution_path, site_url
 import logging
 
 
@@ -55,7 +55,7 @@ class SmtStories(CrawlSpider):
     # write the URLS for stories to scrape to a local file
     write_nodes_to_file(db_nodes, 'articles')
 
-    allowed_domains = ["socialmediatoday.com"]
+    allowed_domains = [].append(site_url)
 
     # set start URL to the file we wrote
     start_urls = ["file://%s/articles.html" % execution_script_path]
@@ -100,7 +100,7 @@ class SmtStories(CrawlSpider):
 
 class SmtAuthors(CrawlSpider):
     name = 'authors'
-    allowed_domains = ["socialmediatoday.com"]
+    allowed_domains = [].append(site_url)
     out_dir = get_out_dir()
     author_info = get_author_urls_from_jl(source_file='%s/stories.jl' % out_dir)
     write_nodes_to_file(author_info, 'authors')
