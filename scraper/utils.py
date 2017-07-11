@@ -65,7 +65,7 @@ def get_nodes_to_export_from_db(changed_epoch, limit=None, offset=None):
             'node_url_path': source,
             'url_path': alias
         }
-        nodes['%s%s' % (db_settings.site_id, alias)] = node_data
+        nodes['%s%s' % (db_settings.site_url, alias)] = node_data
     db.close()
     return nodes
 
