@@ -77,7 +77,7 @@ class SmtStories(CrawlSpider):
     # handle an article page here
     def parse_article_item(self, response):
         db_data = self.db_nodes[response.url]
-        html = BeautifulSoup(response.body, "html.parser")
+        html = BeautifulSoup(response.body, 'lxml')
 
         item = SmtArticleItem()
         item['page_type'] = 'article'
