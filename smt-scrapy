@@ -1,0 +1,304 @@
+#!/usr/bin/env python
+
+import argparse
+import subprocess
+import json
+import datetime
+import os
+import logging
+
+from scraper.utils import get_db_connection, write_all_node_data_from_db_to_file
+
+
+DEFAULT_LIMIT = 1000
+DEFAULT_OFFSET = 0
+
+LOG_FORMATTER = logging.Formatter("%(asctime)s\t[%(levelname)s]\t%(message)s")
+ROOT_LOGGER = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
+
+
+def handle_db(args):
+    write_all_node_data_from_db_to_file()
+
+
+def make_dirs_exist(*args):
+    """
+    Pass in strings of paths to create and create the paths if they don't
+    exist. Fails silently if they already exist or can't be created.
+
+    :param args: Paths to make.
+    """
+    for path in args:
+        try:
+            os.makedirs(path)
+        except os.error:
+            pass
+
+
+def add_file_handler_to_root_logger(log_file_path):
+    file_handler = logging.FileHandler(log_file_path)
+    file_handler.setFormatter(LOG_FORMATTER)
+    ROOT_LOGGER.addHandler(file_handler)
+
+
+def write_crawler_settings_file(limit, offset, out_dir):
+    with open('.crawl_smt/settings.txt', 'w+') as settings_file:
+        settings_file.write('%d,%d,%s' % (limit, offset, out_dir))
+
+
+
+def handle_crawl(args):
+    limit = args.limit
+    offset = args.offset
+
+    end = offset + limit
+    out_dir = 'output/%s-%s' % (offset, end)
+
+    make_dirs_exist('.crawl_smt', out_dir)
+
+    add_file_handler_to_root_logger('{}/log'.format(out_dir))
+
+    write_crawler_settings_file(limit, offset, out_dir)
+
+    logging.info(" >>>>>>>>>>>>>>>>>> START")
+    logging.info("start record: %d" % offset)
+    logging.info("end record: %d" % end)
+
+    start_time = datetime.datetime.now()
+
+    outfile_story = '%s/stories.jl' % out_dir
+    outfile_author = '%s/authors.jl' % out_dir
+
+    first_command = 'scrapy crawl stories --output=%s --output-format=jsonlines' % outfile_story
+    logging.info("running command: `%s`" % first_command)
+
+    process = subprocess.Popen(first_command, shell=True)
+    process.wait()
+    print process.returncode
+
+    second_command = 'scrapy crawl authors --output=%s --output-format=jsonlines' % outfile_author
+    logging.info("running command: `%s`" % second_command)
+
+    process = subprocess.Popen(second_command, shell=True)
+    process.wait()
+    print process.returncode
+
+    end_time = datetime.datetime.now()
+    total_time = end_time - start_time
+
+    unique_urls = []
+    contributor_count = 0
+    article_count = 0
+
+    try:
+        with open(outfile_story) as result_file:
+            for line in result_file:
+                line_data = json.loads(line)
+                if line_data['url'] not in unique_urls:
+                    unique_urls.append(line_data['url'])
+                    article_count += 1
+    except Exception:
+        print "couldn't open stories.jl"
+        logging.error("couldn't open stories.jl")
+
+    try:
+        with open(outfile_author) as result_file:
+            for line in result_file:
+                line_data = json.loads(line)
+                if line_data['url'] not in unique_urls:
+                    unique_urls.append(line_data['url'])
+                    contributor_count += 1
+    except Exception:
+        print "couldn't open authors.jl"
+        logging.error("couldn't open authors.jl")
+
+    logging.info("%d unique urls scraped" % len(unique_urls))
+    logging.info("%d articles parsed" % article_count)
+    logging.info("%d profiles parsed" % contributor_count)
+    logging.info("Total time: %s" % total_time)
+    logging.info(" >>>>>>>>>>>>>>>>>> END\n")
+
+
+def handle_test_crawl(args):
+    """
+    This is just crawl_smt + some stuff to track the number of titles and
+    story titles.
+
+    :param args:
+    :return:
+    """
+    limit = args.limit
+    offset = args.offset
+
+    end = offset + limit
+    out_dir = 'output/%s-%s' % (offset, end)
+
+    make_dirs_exist('.crawl_smt', out_dir)
+
+    add_file_handler_to_root_logger('{}/log'.format(out_dir))
+
+    write_crawler_settings_file(limit, offset, out_dir)
+
+    logging.info(" >>>>>>>>>>>>>>>>>> START")
+    logging.info("start record: %d" % offset)
+    logging.info("end record: %d" % end)
+
+    star_ttime = datetime.datetime.now()
+
+    outfile_story = '%s/stories.jl' % out_dir
+    outfile_author = '%s/authors.jl' % out_dir
+
+    first_commad = 'scrapy crawl stories --output=%s --output-format=jsonlines' % outfile_story
+    logging.info("running command: `%s`" % first_commad)
+
+    process = subprocess.Popen(first_commad, shell=True)
+    process.wait()
+    print process.returncode
+
+    second_commad = 'scrapy crawl authors --output=%s --output-format=jsonlines' % outfile_author
+    logging.info("running command: `%s`" % second_commad)
+
+    process = subprocess.Popen(second_commad, shell=True)
+    process.wait()
+    print process.returncode
+
+    end_time = datetime.datetime.now()
+    total_time = endtime - start_time
+
+    unique_urls = []
+    unique_titles = []
+    unique_story_titles = []
+    contributor_count = 0
+    article_count = 0
+
+    try:
+        with open(outfile_story) as result_file:
+            for line in result_file:
+                line_data = json.loads(line)
+                if line_data['url'] not in unique_urls:
+                    unique_urls.append(line_data['url'])
+                    article_count += 1
+                unique_titles.append(line_data['title'])
+                unique_story_titles.append(line_data['story_title'])
+            unique_titles = set(unique_titles)
+            unique_story_titles = set(unique_story_titles)
+    except Exception:
+        print "couldn't open stories.jl"
+        logging.error("couldn't open stories.jl")
+
+    try:
+        with open(outfile_author) as result_file:
+            for line in result_file:
+                line_data = json.loads(line)
+                if line_data['url'] not in unique_urls:
+                    unique_urls.append(line_data['url'])
+                    contributor_count += 1
+    except Exception:
+        print "couldn't open authors.jl"
+        logging.error("couldn't open authors.jl")
+
+    logging.info("%d unique urls scraped" % len(unique_urls))
+    logging.info("%d articles parsed" % article_count)
+    logging.info("%d titles" % len(unique_titles))
+    logging.info("%d story titles" % len(unique_story_titles))
+    logging.info("%d profiles parsed" % contributor_count)
+    logging.info("Total time: %s" % total_time)
+    logging.info(" >>>>>>>>>>>>>>>>>> END\n")
+
+
+def handle_scrape_all(args):
+    start = args.start
+
+    num_articles = get_number_of_articles()
+
+    for offset in xrange(start, num_articles, 1000):
+        os.system("./smt-scrapy crawl --limit=1000 --offset=%d" % offset)
+
+
+def get_number_of_articles():
+    db = get_db_connection()
+    query = (
+        "SELECT COUNT(*) FROM node n WHERE"
+        " n.type = 'post' AND n.status = 1"
+    )
+
+    cursor = db.cursor()
+    cursor.execute(query)
+
+    num_articles = 0
+
+    for count in cursor:
+        num_articles = count[0]
+
+    db.close()
+    return num_articles
+
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description=(
+            'smt-scrapy does all the smt-scrapy things you would ever want.'
+        )
+    )
+    subparsers = parser.add_subparsers()
+
+    db_parser = subparsers.add_parser('db', help='Do stuff with the database.')
+    db_parser.set_defaults(func=handle_db)
+
+    crawl_parser = subparsers.add_parser('crawl', help='Do the crawling stuff.')
+    crawl_parser.set_defaults(func=handle_crawl)
+    crawl_parser.add_argument(
+        '--limit',
+        help='INT: limit initial node query',
+        dest='limit',
+        type=int,
+        required=False,
+        default=DEFAULT_LIMIT
+    )
+    crawl_parser.add_argument(
+        '--offset',
+        help='INT: offset initial node query',
+        dest='offset',
+        type=int,
+        required=False,
+        default=DEFAULT_OFFSET
+    )
+
+    test_crawl_parser = subparsers.add_parser('test_crawl', help='Test crawling.')
+    test_crawl_parser.set_defaults(func=handle_test_crawl)
+    test_crawl_parser.add_argument(
+        '--limit',
+        help='INT: limit initial node query',
+        dest='limit',
+        type=int,
+        required=False,
+        default=DEFAULT_LIMIT
+    )
+    test_crawl_parser.add_argument(
+        '--offset',
+        help='INT: offset initial node query',
+        dest='offset',
+        type=int,
+        required=False,
+        default=DEFAULT_OFFSET
+    )
+
+    scrape_all_parser = subparsers.add_parser('scrape_all', help='Scrape all the things.')
+    scrape_all_parser.set_defaults(fund=handle_scrape_all)
+    scrape_all_parser.add_argument(
+        '--start',
+        help='INT: start point',
+        dest='start',
+        type=int,
+        required=False,
+        default=0
+    )
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
