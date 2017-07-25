@@ -135,10 +135,9 @@ def get_author_urls_from_jl(source_file='output/stories.jl'):
 
 
 def write_nodes_to_file(nodes, filename):
-    f = open('%s.html' % filename, 'w+')
-    for url in nodes.keys():
-        f.write('<a href="%s">%s</a><br />' % (url, url))
-    f.close()
+    with open('{}.html'.format(filename), 'wb') as fp:
+        for url in nodes.keys():
+            fp.write('<a href="{}">{}</a><br />'.format(url, url))
 
 
 def get_setting_limits():
