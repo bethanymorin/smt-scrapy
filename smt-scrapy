@@ -52,42 +52,15 @@ def write_crawler_settings_file(limit, offset, out_dir):
         settings_file.write('%d,%d,%s' % (limit, offset, out_dir))
 
 
-
 def handle_crawl(args):
-    limit = args.limit
-    offset = args.offset
-
-    end = offset + limit
-    out_dir = 'output/%s-%s' % (offset, end)
-
-    make_dirs_exist('.crawl_smt', out_dir)
-
-    add_file_handler_to_root_logger('{}/log'.format(out_dir))
-
-    write_crawler_settings_file(limit, offset, out_dir)
 
     logging.info(" >>>>>>>>>>>>>>>>>> START")
-    logging.info("start record: %d" % offset)
-    logging.info("end record: %d" % end)
 
     start_time = datetime.datetime.now()
 
-    outfile_story = '%s/stories.jl' % out_dir
-    outfile_author = '%s/authors.jl' % out_dir
+    crawl_stories('output/stories.jl')
 
-    first_command = 'scrapy crawl stories --output=%s --output-format=jsonlines' % outfile_story
-    logging.info("running command: `%s`" % first_command)
-
-    process = subprocess.Popen(first_command, shell=True)
-    process.wait()
-    print process.returncode
-
-    second_command = 'scrapy crawl authors --output=%s --output-format=jsonlines' % outfile_author
-    logging.info("running command: `%s`" % second_command)
-
-    process = subprocess.Popen(second_command, shell=True)
-    process.wait()
-    print process.returncode
+    crawl_authors('output/authors.jl')
 
     end_time = datetime.datetime.now()
     total_time = end_time - start_time
@@ -97,7 +70,7 @@ def handle_crawl(args):
     article_count = 0
 
     try:
-        with open(outfile_story) as result_file:
+        with open('output/stories.jl') as result_file:
             for line in result_file:
                 line_data = json.loads(line)
                 if line_data['url'] not in unique_urls:
@@ -108,7 +81,7 @@ def handle_crawl(args):
         logging.error("couldn't open stories.jl")
 
     try:
-        with open(outfile_author) as result_file:
+        with open('output/authors.jl') as result_file:
             for line in result_file:
                 line_data = json.loads(line)
                 if line_data['url'] not in unique_urls:
@@ -123,6 +96,28 @@ def handle_crawl(args):
     logging.info("%d profiles parsed" % contributor_count)
     logging.info("Total time: %s" % total_time)
     logging.info(" >>>>>>>>>>>>>>>>>> END\n")
+
+
+def crawl_stories(outfile_story):
+    logging.info('crawling stories')
+    first_command = 'scrapy crawl stories --output=%s --output-format=jsonlines' % outfile_story
+    logging.info("running command: `%s`" % first_command)
+
+    process = subprocess.Popen(first_command, shell=True)
+    process.wait()
+    print process.returncode
+    logging.info('done crawling stories')
+
+
+def crawl_authors(outfile_author):
+    logging.info('crawling authors')
+    second_command = 'scrapy crawl authors --output=%s --output-format=jsonlines' % outfile_author
+    logging.info("running command: `%s`" % second_command)
+
+    process = subprocess.Popen(second_command, shell=True)
+    process.wait()
+    print process.returncode
+    logging.info('done crawling authors')
 
 
 def handle_test_crawl(args):
@@ -302,6 +297,10 @@ def main():
     )
 
     args = parser.parse_args()
+
+    make_dirs_exist('.crawl_smt', 'output')
+    add_file_handler_to_root_logger('{}/log'.format('output'))
+
     args.func(args)
 
 

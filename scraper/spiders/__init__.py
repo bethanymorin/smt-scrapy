@@ -1,13 +1,13 @@
+import logging
+import os
+
 from bs4 import BeautifulSoup
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
 from scraper.utils import (
-    get_nodes_to_export_from_db,
     get_author_urls_from_jl,
     write_nodes_to_file,
-    get_setting_limits,
-    get_out_dir,
     get_meta_description,
     get_author_info,
     get_story_body,
@@ -18,21 +18,17 @@ from scraper.utils import (
     get_meta_content,
     get_all_node_data
 )
-from scraper.db_settings import execution_path, site_url
-import logging
 
-
-out_dir = get_out_dir()
 
 logFormatter = logging.Formatter("%(asctime)s\t[%(levelname)s]\t%(message)s")
 rootLogger = logging.getLogger()
 
 logging.basicConfig(level=logging.DEBUG)
-fileHandler = logging.FileHandler('%s/log' % out_dir)
+fileHandler = logging.FileHandler('output/log')
 fileHandler.setFormatter(logFormatter)
 rootLogger.addHandler(fileHandler)
 
-execution_script_path = execution_path
+execution_script_path = os.getcwd()
 
 ALLOWED_DOMAINS = ['socialmediatoday.com', 'platform.sh']
 
@@ -48,14 +44,7 @@ class SmtStories(CrawlSpider):
     '''
     name = "stories"
 
-    # get database parameters
-    limit, offset = get_setting_limits()
-
-    # query for the URLs for nodes to scrape in this run
-    db_nodes = get_nodes_to_export_from_db(0, limit=limit, offset=offset)
-
-    # write the URLS for stories to scrape to a local file
-    write_nodes_to_file(db_nodes, 'articles')
+    db_nodes = get_all_node_data()
 
     allowed_domains = ALLOWED_DOMAINS
 
@@ -97,14 +86,14 @@ class SmtStories(CrawlSpider):
         item['changed'] = get_meta_content(html, 'article:modified_time', '1776-07-04T06:30:00-00:00')
         item['pub_date'] = get_meta_content(html, 'article:published_time', '1776-07-04T06:30:00-00:00')
         update_url_feed(response.url, spider=self)
+
         return item
 
 
 class SmtAuthors(CrawlSpider):
     name = 'authors'
     allowed_domains = ALLOWED_DOMAINS
-    out_dir = get_out_dir()
-    author_info = get_author_urls_from_jl(source_file='%s/stories.jl' % out_dir)
+    author_info = get_author_urls_from_jl(source_file='output/stories.jl')
     write_nodes_to_file(author_info, 'authors')
     start_urls = ["file://%s/authors.html" % execution_script_path]
     rules = [

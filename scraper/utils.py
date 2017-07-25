@@ -137,7 +137,7 @@ def get_author_urls_from_jl(source_file='output/stories.jl'):
 def write_nodes_to_file(nodes, filename):
     with open('{}.html'.format(filename), 'wb') as fp:
         for url in nodes.keys():
-            fp.write('<a href="{}">{}</a><br />'.format(url, url))
+            fp.write('<a href="{}">{}</a><br />\n'.format(url, url))
 
 
 def get_setting_limits():
@@ -152,9 +152,7 @@ def get_setting_limits():
 
 
 def get_out_dir():
-    settings = open('.crawl_smt/settings.txt', 'r').read().split(',')
-    out_dir = settings[2]
-    return out_dir
+    return 'output'
 
 
 # page parsing utils
