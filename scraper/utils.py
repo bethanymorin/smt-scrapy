@@ -62,8 +62,20 @@ def write_all_node_data_from_db_to_file():
         nodes['%s%s' % (db_settings.site_url, alias)] = node_data
     db.close()
 
+    logging.info('Dumping all node data to a json file for later.')
     with open('nodes.json', 'wb') as fp:
-        json.dump(nodes, fp)
+        json.dump(nodes, fp, encoding='latin-1')
+
+    logging.info('Writing articles.html file.')
+    # write the URLS for stories to scrape to a local file
+    write_nodes_to_file(nodes, 'articles')
+
+
+def get_all_node_data():
+    with open('nodes.json', 'rb') as fp:
+        all_node_data = json.load(fp, encoding='latin-1')
+
+    return all_node_data
 
 
 def get_nodes_to_export_from_db(changed_epoch, limit=None, offset=None):

@@ -7,7 +7,12 @@ import datetime
 import os
 import logging
 
-from scraper.utils import get_db_connection, write_all_node_data_from_db_to_file
+from scraper.utils import (
+    get_db_connection,
+    write_all_node_data_from_db_to_file,
+    get_all_node_data,
+    write_nodes_to_file
+)
 
 
 DEFAULT_LIMIT = 1000
