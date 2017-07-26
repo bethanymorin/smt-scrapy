@@ -6,6 +6,28 @@ import os
 import string
 
 
+HTML_TEMPLATE = """
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>{title}</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+    
+    {body}
+
+    </body>
+</html>
+
+"""
+
+LINK_TEMPLATE = '<a href="{url}">{url}</a><br />'
+
+
 # set up and database utils
 def get_db_connection():
     """ Establish a mysql database connection from given db_settings file values
@@ -135,9 +157,12 @@ def get_author_urls_from_jl(source_file='output/stories.jl'):
 
 
 def write_nodes_to_file(nodes, filename):
+    body = []
+    for url in nodes.keys():
+        body.append(LINK_TEMPLATE.format(url=url))
+
     with open('{}.html'.format(filename), 'wb') as fp:
-        for url in nodes.keys():
-            fp.write('<a href="{}">{}</a><br />\n'.format(url, url))
+        fp.write(HTML_TEMPLATE.format(title=filename, body='\n'.join(body)))
 
 
 def get_setting_limits():
