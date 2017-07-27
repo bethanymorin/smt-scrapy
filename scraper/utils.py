@@ -4,6 +4,7 @@ import logging
 import json
 import os
 import string
+import codecs
 
 
 HTML_TEMPLATE = """
@@ -92,6 +93,17 @@ def write_all_node_data_from_db_to_file():
     # write the URLS for stories to scrape to a local file
     write_nodes_to_file(nodes, 'articles')
 
+def write_urls_txt_file_from_node_data_json(args):
+    all_node_data = get_all_node_data()
+
+    with codecs.open('urls.txt', 'wb', encoding='latin-1') as fp:
+        fp.write('\n'.join(all_node_data.keys()))
+
+def get_start_urls():
+    with codecs.open('urls.txt', 'rb', encoding='latin-1') as fp:
+        urls = fp.readlines()
+
+    return [x.strip() for x in urls]
 
 def get_all_node_data():
     with open('nodes.json', 'rb') as fp:
@@ -174,10 +186,6 @@ def get_setting_limits():
     if offset == 0:
         offset = None
     return limit, offset
-
-
-def get_out_dir():
-    return 'output'
 
 
 # page parsing utils

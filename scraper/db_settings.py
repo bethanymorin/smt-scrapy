@@ -7,5 +7,3 @@ mysql_pw = 'changeme'
 
 site_url = 'https://www---smt-import-20170710-vt6syoq-3faqimkzadf6s.us.platform.sh/'
 
-execution_path = ''
-# execution_path = '/Users/colin/Repositories/smt-scrapy'
