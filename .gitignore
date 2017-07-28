@@ -3,3 +3,5 @@
 .scrapy
 .DS_Store
 *.pyc
+nodes.json
+urls.txt

@@ -4,32 +4,34 @@ from bs4 import BeautifulSoup
 
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
 from scraper import utils
+from scraper import node_data
 
 
 class SmtStories(scrapy.Spider):
-    ''' CrawlSpider class for crawling the socialmediatoday.com site story pages
+    """
+    Spider class for crawling the socialmediatoday.com site story pages. This
+    also looks for author links and parses the author profile pages.
 
-        Crawler is initialized based on command line input, see READEM for
-        details and instructions
-    '''
+    Run on the command line with scrapy crawl stories
+    """
     name = "stories"
     allowed_domains = ['socialmediatoday.com', 'platform.sh']
 
-    node_data_reader = utils.NodeDataReader()
+    # Read the node data and urls from nodes.json and urls.txt files.
+    node_data_reader = node_data.Reader()
 
+    # The urls of the story pages.
     start_urls = node_data_reader.get_urls()
-    db_nodes = node_data_reader.get_data()
 
     def parse(self, response):
         """
         Parse a story page and look for author links.
 
-        :param response:
-        :return:
+        Yields requests for author profile pages and story items.
         """
-        self.logger.info('Started crawling {}'.format(response.url))
+        self.logger.info('Parsing {}'.format(response.url))
 
-        db_data = self.db_nodes[response.url]
+        db_data = self.node_data_reader.get_node_data_by_url(response.url)
         html = BeautifulSoup(response.body, 'lxml')
 
         item = SmtArticleItem()
@@ -48,16 +50,21 @@ class SmtStories(scrapy.Spider):
         item['changed'] = utils.get_meta_content(html, 'article:modified_time', '1776-07-04T06:30:00-00:00')
         item['pub_date'] = utils.get_meta_content(html, 'article:published_time', '1776-07-04T06:30:00-00:00')
 
+        # If we found an author URL, then make a request for the author
+        # profile page.
         if item['contributor_profile_url'] is not None:
-
             author_url = item['contributor_profile_url']
+
+            # Extra context that we want in the author export that doesn't
+            # exist on the author profile page. Email and uid come from the
+            # database.
             author_info = {
                 'url': author_url,
                 'uid': item['contributor_uid'],
                 'email': item['contributor_email'],
             }
 
-            self.logger.info('Yielding profile url for crawling: {}'.format(author_url))
+            self.logger.info('Yielding profile url: {}'.format(author_url))
 
             yield response.follow(
                 author_url,
@@ -72,10 +79,11 @@ class SmtStories(scrapy.Spider):
     def parse_author_page(self, response):
         """
         Parse an author profile page.
-
-        :param response:
-        :return:
         """
+        self.logger.info('Parsing {}'.format(response.url))
+
+        # This is the uid and email we provided in the request meta when
+        # parsing the story page.
         db_data = response.meta
         html = BeautifulSoup(response.body, 'lxml')
 

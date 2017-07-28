@@ -9,7 +9,9 @@ import scrapy
 
 
 class SmtContributorProfileItem(scrapy.Item):
-    """ Represents the content of a Contributor Profile page as a scrapy Item object
+    """
+    Represents the content of a Contributor Profile page as a scrapy Item
+    object.
     """
     page_type = scrapy.Field()
     uid = scrapy.Field()
@@ -30,7 +32,8 @@ class SmtContributorProfileItem(scrapy.Item):
 
 
 class SmtArticleItem(scrapy.Item):
-    """ Represents the content of an Article page as a scrapy Item object
+    """
+    Represents the content of an Article page as a scrapy Item object.
     """
     page_type = scrapy.Field()
     node_id = scrapy.Field()

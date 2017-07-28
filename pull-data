@@ -8,18 +8,35 @@ start urls to crawl to a urls.txt file.
 First edit scraper.db_settings to have the database connection details you
 want. Then run this script like so:
 
-./smt-scrapy
+./pull-data
 
 or
 
-python smt-scrapy
+python pull-data
+
+This will query the database and create two files that our scrapy spider needs
+so it can run without the database.
+
+The files are nodes.json and urls.txt.
+
+Once those are created you can then run scrapy itself.
+
+scrapy crawl stories
+
+This will output a jsonlines file in feeds/stories/{date-time}.jl
+
+The single jl file will include both node data and author data. Each spider
+run will generate a brand new file with a new timestamp.
 """
 
-from scraper import utils
+from scraper import node_data
 
 
 def main():
-    writer = utils.NodeDataWriter()
+    """
+    Write the nodes.json and urls.txt files.
+    """
+    writer = node_data.Writer()
     writer.write_nodes_json()
     writer.write_urls_txt_file()
 
