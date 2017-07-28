@@ -59,7 +59,7 @@ class NodeDataWriter(AbstractNodeData):
         with codecs.open(self.urls_filename, 'wb', encoding=self.encoding) as fp:
             fp.write('\n'.join(self.get_urls()))
 
-    def _get_connection():
+    def _get_connection(self):
         """ Establish a mysql database connection from given db_settings file values
             Return the database connection object
         """
