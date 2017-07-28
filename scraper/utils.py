@@ -2,190 +2,120 @@ import db_settings
 import MySQLdb
 import logging
 import json
-import os
 import string
 import codecs
 
 
-HTML_TEMPLATE = """
-<!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <title>{title}</title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <body>
-    
-    {body}
+class AbstractNodeData(object):
 
-    </body>
-</html>
+    def __init__(self, nodes_filename='nodes.json', urls_filename='urls.txt', encoding='latin-1'):
+        self._data = None
+        self._urls = None
+        self.nodes_filename = nodes_filename
+        self.urls_filename = urls_filename
+        self.encoding = encoding
 
-"""
+    def get_data(self):
+        if self._data is None:
+            self._data = self._query_data()
 
-LINK_TEMPLATE = '<a href="{url}">{url}</a><br />'
+        return self._data
 
+    def get_urls(self):
+        if self._urls is None:
+            self._urls = self._query_urls()
 
-# set up and database utils
-def get_db_connection():
-    """ Establish a mysql database connection from given db_settings file values
-        Return the database connection object
-    """
-    kwargs = {}
-    if db_settings.mysql_pw:
-        kwargs['passwd'] = db_settings.mysql_pw
-    if db_settings.mysql_user:
-        kwargs['user'] = db_settings.mysql_user
-    if db_settings.mysql_host:
-        kwargs['host'] = db_settings.mysql_host
-    if db_settings.mysql_db:
-        kwargs['db'] = db_settings.mysql_db
-    if db_settings.mysql_port:
-        kwargs['port'] = db_settings.mysql_port
+        return self._urls
 
-    logging.debug("Connecting to mysql: %s" % kwargs)
-    db = MySQLdb.connect(**kwargs)
-    return db
+    def _query_data(self):
+        return {}
+
+    def _query_urls(self):
+        return []
 
 
-def write_all_node_data_from_db_to_file():
-    # this query gets back the identifying information for the posts we want
-    # as well as the node and full path URLs that we can use to get the current
-    # actual HTML page
-    db = get_db_connection()
-    logging.info("Building query for all stories.")
-    node_query = (
-        "select n.nid, user.uid, user.mail, n.changed, "
-        "n.type as content_type, u.alias, u.source "
-        "from node n "
-        "join users user on n.uid = user.uid "
-        "join url_alias u on u.source = CONCAT('node/', n.nid) "
-        "where n.type ='post' and n.status = 1 "
-        "and u.pid=(select pid from url_alias where source = u.source "
-        "order by pid desc limit 1) "
-        "order by n.changed DESC"
-    )
-    logging.debug("Query is: %s" % node_query)
-    node_cursor = db.cursor()
-    node_cursor.execute(node_query)
-    nodes = {}
-    for nid, uid, mail, changed, content_type, alias, source in node_cursor:
-        node_data = {
-            'nid': nid,
-            'uid': uid,
-            'user_email': mail,
-            'changed': changed,
-            'content_type': content_type,
-            'node_url_path': source,
-            'url_path': alias
-        }
-        nodes['%s%s' % (db_settings.site_url, alias)] = node_data
-    db.close()
+class NodeDataReader(AbstractNodeData):
 
-    logging.info('Dumping all node data to a json file for later.')
-    with open('nodes.json', 'wb') as fp:
-        json.dump(nodes, fp, encoding='latin-1')
+    def _query_data(self):
+        with codecs.open(self.nodes_filename, 'rb') as fp:
+            all_node_data = json.load(fp, encoding=self.encoding)
 
-    logging.info('Writing articles.html file.')
-    # write the URLS for stories to scrape to a local file
-    write_nodes_to_file(nodes, 'articles')
+        return all_node_data
 
-def write_urls_txt_file_from_node_data_json(args):
-    all_node_data = get_all_node_data()
+    def _query_urls(self):
+        with codecs.open(self.urls_filename, 'rb', encoding=self.encoding) as fp:
+            urls = fp.readlines()
 
-    with codecs.open('urls.txt', 'wb', encoding='latin-1') as fp:
-        fp.write('\n'.join(all_node_data.keys()))
-
-def get_start_urls():
-    with codecs.open('urls.txt', 'rb', encoding='latin-1') as fp:
-        urls = fp.readlines()
-
-    return [x.strip() for x in urls]
-
-def get_all_node_data():
-    with open('nodes.json', 'rb') as fp:
-        all_node_data = json.load(fp, encoding='latin-1')
-
-    return all_node_data
+        return [x.strip() for x in urls]
 
 
-def get_nodes_to_export_from_db(changed_epoch, limit=None, offset=None):
-    # this query gets back the identifying information for the posts we want
-    # as well as the node and full path URLs that we can use to get the current
-    # actual HTML page
-    db = get_db_connection()
-    logging.info("Building query for stories changed from %s" % changed_epoch)
-    node_query = (
-        "select n.nid, user.uid, user.mail, n.changed, "
-        "n.type as content_type, u.alias, u.source "
-        "from node n "
-        "join users user on n.uid = user.uid "
-        "join url_alias u on u.source = CONCAT('node/', n.nid) "
-        "where n.type ='post' and n.status = 1 "
-        "and u.pid=(select pid from url_alias where source = u.source "
-        "order by pid desc limit 1) "
-        "and n.changed > %d "
-        "order by n.changed DESC"
-    )
-    logging.debug("Query is: %s" % node_query)
-    node_query = node_query % changed_epoch
-    if limit:
-        node_query = node_query + ' limit %s' % limit
-    if offset:
-        node_query = node_query + ' offset %s' % offset
-    node_cursor = db.cursor()
-    node_cursor.execute(node_query)
-    nodes = {}
-    for nid, uid, mail, changed, content_type, alias, source in node_cursor:
-        node_data = {
-            'nid': nid,
-            'uid': uid,
-            'user_email': mail,
-            'changed': changed,
-            'content_type': content_type,
-            'node_url_path': source,
-            'url_path': alias
-        }
-        nodes['%s%s' % (db_settings.site_url, alias)] = node_data
-    db.close()
-    return nodes
+class NodeDataWriter(AbstractNodeData):
 
+    def write_nodes_json(self):
+        with codecs.open(self.nodes_filename, 'wb') as fp:
+            json.dump(self.get_data(), fp, encoding=self.encoding)
 
-def get_author_urls_from_jl(source_file='output/stories.jl'):
-    author_links = {}
-    if os.path.exists(source_file):
-        with open(source_file) as file:
-            for line in file:
-                data = json.loads(line)
-                author_links[data['contributor_profile_url']] = {
-                    'url': data['contributor_profile_url'],
-                    'uid': data['contributor_uid'],
-                    'email': data['contributor_email'],
-                }
-    return author_links
+    def write_urls_txt_file(self):
+        with codecs.open(self.urls_filename, 'wb', encoding=self.encoding) as fp:
+            fp.write('\n'.join(self.get_urls()))
 
+    def _get_connection():
+        """ Establish a mysql database connection from given db_settings file values
+            Return the database connection object
+        """
+        kwargs = {}
+        if db_settings.mysql_pw:
+            kwargs['passwd'] = db_settings.mysql_pw
+        if db_settings.mysql_user:
+            kwargs['user'] = db_settings.mysql_user
+        if db_settings.mysql_host:
+            kwargs['host'] = db_settings.mysql_host
+        if db_settings.mysql_db:
+            kwargs['db'] = db_settings.mysql_db
+        if db_settings.mysql_port:
+            kwargs['port'] = db_settings.mysql_port
 
-def write_nodes_to_file(nodes, filename):
-    body = []
-    for url in nodes.keys():
-        body.append(LINK_TEMPLATE.format(url=url))
+        logging.debug("Connecting to mysql: %s" % kwargs)
+        db = MySQLdb.connect(**kwargs)
+        return db
 
-    with open('{}.html'.format(filename), 'wb') as fp:
-        fp.write(HTML_TEMPLATE.format(title=filename, body='\n'.join(body)))
+    def _query_data(self):
+        # this query gets back the identifying information for the posts we want
+        # as well as the node and full path URLs that we can use to get the current
+        # actual HTML page
+        db = self._get_connection()
+        node_query = (
+            "select n.nid, user.uid, user.mail, n.changed, "
+            "n.type as content_type, u.alias, u.source "
+            "from node n "
+            "join users user on n.uid = user.uid "
+            "join url_alias u on u.source = CONCAT('node/', n.nid) "
+            "where n.type ='post' and n.status = 1 "
+            "and u.pid=(select pid from url_alias where source = u.source "
+            "order by pid desc limit 1) "
+            "order by n.changed DESC"
+        )
 
+        node_cursor = db.cursor()
+        node_cursor.execute(node_query)
+        nodes = {}
+        for nid, uid, mail, changed, content_type, alias, source in node_cursor:
+            node_data = {
+                'nid': nid,
+                'uid': uid,
+                'user_email': mail,
+                'changed': changed,
+                'content_type': content_type,
+                'node_url_path': source,
+                'url_path': alias
+            }
+            nodes['%s%s' % (db_settings.site_url, alias)] = node_data
+        db.close()
 
-def get_setting_limits():
-    settings = open('.crawl_smt/settings.txt', 'r').read().split(',')
-    limit = int(settings[0])
-    offset = int(settings[1])
-    if limit == 0:
-        limit = None
-    if offset == 0:
-        offset = None
-    return limit, offset
+        return nodes
+
+    def _query_urls(self):
+        return self.get_data().keys()
 
 
 # page parsing utils

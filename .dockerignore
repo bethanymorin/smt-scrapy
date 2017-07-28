@@ -1,0 +1,6 @@
+.scrapy
+feeds
+.idea
+.git
+nodes.json
+urls.txt

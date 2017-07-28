@@ -1,9 +1,5 @@
 *.jl
 *.zip
 .scrapy
-.crawl_smt
-*.html
-urllog.txt
-*log
 .DS_Store
 *.pyc

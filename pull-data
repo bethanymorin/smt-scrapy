@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+"""
+Query the SMT database and write node data to a nodes.json file, and a list of
+start urls to crawl to a urls.txt file.
+
+
+First edit scraper.db_settings to have the database connection details you
+want. Then run this script like so:
+
+./smt-scrapy
+
+or
+
+python smt-scrapy
+"""
+
+from scraper import utils
+
+
+def main():
+    writer = utils.NodeDataWriter()
+    writer.write_nodes_json()
+    writer.write_urls_txt_file()
+
+
+if __name__ == "__main__":
+    main()
