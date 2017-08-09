@@ -21,6 +21,7 @@ jobs:
           command: |
             . venv/bin/activate
             pip install --no-deps pyflakes==1.0.0 pep8==1.5.7 mccabe==0.3.1 flake8==2.5.1 flake8-debugger==1.4.0 pep8-naming==0.3.3
+            mkdir artifacts
             flake8 --output-file=artifacts/flake8_report.txt .
       - store_artifacts:
           path: artifacts
