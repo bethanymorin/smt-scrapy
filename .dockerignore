@@ -1,6 +1,8 @@
+project.egg-info
+build
 .scrapy
+.DS_Store
 feeds
 .idea
 .git
-nodes.json
-urls.txt
+*.pyc

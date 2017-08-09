@@ -24,10 +24,10 @@ class SmtContributorProfileItem(scrapy.Item):
     job_title = scrapy.Field()
     headshot_url = scrapy.Field()
     website = scrapy.Field()
-    facebook_url = scrapy.Field()
-    twitter_url = scrapy.Field()
-    linkedin_url = scrapy.Field()
-    google_url = scrapy.Field()
+    facebook = scrapy.Field()
+    twitter = scrapy.Field()
+    linkedin = scrapy.Field()
+    google = scrapy.Field()
     bio = scrapy.Field()
 
 

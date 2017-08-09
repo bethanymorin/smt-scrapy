@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:3.6.2-stretch
 
 RUN mkdir /app
 
@@ -12,4 +12,4 @@ RUN pip install -r /app/requirements.txt
 
 COPY . /app/
 
-CMD ["/app/smt-scrapy", "--help"]
+CMD ["scrapy", "crawl", "socialmediatoday"]

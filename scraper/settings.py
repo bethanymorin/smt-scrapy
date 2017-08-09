@@ -121,3 +121,7 @@ FEED_URI = 'file://{}/feeds/%(name)s/%(time)s.jl'.format(os.getcwd())
 FEED_FORMAT = 'jsonlines'
 FEED_EXPORT_ENCODING = 'utf-8'
 FEED_STORE_EMPTY = True
+
+START_URLS = [
+    'http://www---smt-import-20170809-wq4zreq-3faqimkzadf6s.us.platform.sh/all-stories?x=1'
+]
