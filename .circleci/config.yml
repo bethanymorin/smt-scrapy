@@ -1,0 +1,35 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/smt-scrapy
+    docker:
+      - image: circleci/python:3.6.2-jessie
+    steps:
+      - checkout
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+      - run:
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          paths:
+            - "venv"
+      - run:
+          command: |
+            . venv/bin/activate
+            python manage.py test
+            pip install --no-deps pyflakes==1.0.0 pep8==1.5.7 mccabe==0.3.1 flake8==2.5.1 flake8-debugger==1.4.0 pep8-naming==0.3.3
+            flake8 --output-file=artifacts/flake8_report.txt .
+      - store_artifacts:
+          path: artifacts
+          destination: artifacts
+      # - deploy:
+      #     name: Deploy Master to ScrapingHub Cloud
+      #     command: |
+      #       if [ "${CIRCLE_BRANCH}" == "master" ]; then
+      #         git push heroku master
+      #         heroku run python manage.py deploy
+      #         heroku restart
