@@ -26,10 +26,11 @@ jobs:
       - store_artifacts:
           path: artifacts
           destination: artifacts
-      # - deploy:
-      #     name: Deploy Master to ScrapingHub Cloud
-      #     command: |
-      #       if [ "${CIRCLE_BRANCH}" == "master" ]; then
-      #         git push heroku master
-      #         heroku run python manage.py deploy
-      #         heroku restart
+      - deploy:
+          name: Deploy Master to ScrapingHub Cloud
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              . venv/bin/activate
+              pip install shub
+              echo "apikeys:\n  default: ${SHUB_API_KEY}" > ~/.scrapinghub.yml
+              shub deploy --version ${CIRCLE_BUILD_NUM}
