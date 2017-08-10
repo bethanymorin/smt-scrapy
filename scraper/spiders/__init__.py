@@ -10,10 +10,18 @@ USER_FIELD_MAP = {
 }
 
 SOCIAL_NETWORKS = {
-    'facebook': 'div.field-name-field-user-facebook-url div.field-item even a::attr(href)',
-    'twitter': 'div.field-name-field-user-twitter-url div.field-item even a::attr(href)',
-    'linkedin': 'div.field-name-field-user-linkedin-url div.field-item even a::attr(href)',
-    'google': 'div.field-name-field-user-google-url div.field-item even a::attr(href)',
+    'facebook':
+        'div.field-name-field-user-facebook-url div.field-item even '
+        'a::attr(href)',
+    'twitter':
+        'div.field-name-field-user-twitter-url div.field-item even '
+        'a::attr(href)',
+    'linkedin':
+        'div.field-name-field-user-linkedin-url div.field-item even '
+        'a::attr(href)',
+    'google':
+        'div.field-name-field-user-google-url div.field-item even '
+        'a::attr(href)',
 }
 
 
@@ -37,7 +45,8 @@ class SocialMediaToday(scrapy.Spider):
         # Look for pagination.
         next_page = response.css('.pager-next a::attr(href)').extract_first()
         if next_page is not None:
-            self.logger.info('Adding a new all-stories page: {}'.format(next_page))
+            self.logger.info(
+                'Adding a new all-stories page: {}'.format(next_page))
             yield response.follow(
                 next_page,
                 callback=self.parse
@@ -96,26 +105,38 @@ class SocialMediaToday(scrapy.Spider):
         item['title'] = head.css('title::text').extract_first()
         item['contributor_uid'] = response.meta['uid']
 
-        canonical_url = head.css('link[rel=canonical]::attr(href)').extract_first()
+        canonical_url = head.css(
+            'link[rel=canonical]::attr(href)').extract_first()
         item['canonical_url'] = canonical_url or ''
 
-        desc = head.css('meta[name=description]::attr(content)').extract_first()
+        desc = head.css(
+            'meta[name=description]::attr(content)').extract_first()
         item['meta_description'] = desc or ''
 
-        changed = head.css('meta[property="article:modified_time"]::attr(content)').extract_first()
+        changed = head.css(
+            'meta[property="article:modified_time"]::attr(content)')\
+            .extract_first()
         item['changed'] = changed or ''
 
-        pub_date = head.css('meta[property="article:published_time"]::attr(content)').extract_first()
+        pub_date = head.css(
+            'meta[property="article:published_time"]::attr(content)')\
+            .extract_first()
         item['pub_date'] = pub_date or ''
 
-        story_title = body.css('section#section-content div[property="dc:title"] h3::text').extract_first()
+        story_title = body.css(
+            'section#section-content div[property="dc:title"] h3::text')\
+            .extract_first()
         item['story_title'] = story_title or ''
 
-        author_link = body.css('div.field-name-post-date-author-name .field-item p a')
+        author_link = body.css(
+            'div.field-name-post-date-author-name .field-item p a')
         item['byline'] = author_link.css('::text').extract_first() or ''
-        item['contributor_profile_url'] = author_link.css('::attr(href)').extract_first() or ''
+        item['contributor_profile_url'] = author_link.css(
+            '::attr(href)').extract_first() or ''
 
-        body_content = body.css('div.field-name-body div[property="content:encoded"]').extract_first()
+        body_content = body.css(
+            'div.field-name-body div[property="content:encoded"]')\
+            .extract_first()
         item['body'] = body_content or ''
 
         yield item
@@ -143,10 +164,13 @@ class SocialMediaToday(scrapy.Spider):
             if field_value:
                 item[item_key] = field_value.strip()
 
-        headshot_url = body.css('div.field-name-ds-user-picture img::attr(src)').extract_first()
+        headshot_url = body.css(
+            'div.field-name-ds-user-picture img::attr(src)').extract_first()
         item['headshot_url'] = headshot_url or ''
 
-        website = body.css('div.field-name-field-user-website .field-item a::attr(href)').extract_first()
+        website = body.css(
+            'div.field-name-field-user-website .field-item a::attr(href)')\
+            .extract_first()
         item['website'] = website or ''
 
         for network_key, selector in SOCIAL_NETWORKS.items():
