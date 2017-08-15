@@ -9,13 +9,17 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 
+import os
+
+
 BOT_NAME = 'smt_scraper'
 
 SPIDER_MODULES = ['scraper.spiders']
 NEWSPIDER_MODULE = 'scraper.spiders'
 
 
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
+# Crawl responsibly by identifying yourself (and your website) on the
+# user-agent
 # USER_AGENT = 'scraper (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
@@ -25,7 +29,8 @@ NEWSPIDER_MODULE = 'scraper.spiders'
 # CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
-# See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
+# See http://scrapy.readthedocs.org/en/latest/topics/settings.
+# html#download-delay
 # See also autothrottle settings and docs
 # DOWNLOAD_DELAY = 0
 # The download delay setting will honor only one of:
@@ -40,7 +45,8 @@ NEWSPIDER_MODULE = 'scraper.spiders'
 
 # Override the default request headers:
 # DEFAULT_REQUEST_HEADERS = {
-#   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+#   'Accept':
+#       'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 #   'Accept-Language': 'en',
 # }
 
@@ -52,9 +58,9 @@ NEWSPIDER_MODULE = 'scraper.spiders'
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 123,
-}
+# DOWNLOADER_MIDDLEWARES = {
+#     'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 123,
+# }
 
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
@@ -82,9 +88,46 @@ DOWNLOADER_MIDDLEWARES = {
 # AUTOTHROTTLE_DEBUG = False
 
 # Enable and configure HTTP caching (disabled by default)
-# See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-HTTPCACHE_ENABLED = True
+# See
+# http://scrapy.readthedocs.org/en/latest/topics
+# /downloader-middleware.html#httpcache-middleware-settings
+HTTPCACHE_ENABLED = False
 # #HTTPCACHE_EXPIRATION_SECS = 0
 HTTPCACHE_DIR = 'httpcache'
-HTTPCACHE_IGNORE_HTTP_CODES = [200, 301, 302, 404]
-HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+HTTPCACHE_IGNORE_HTTP_CODES = []
+# HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.DbmCacheStorage'
+HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
+
+DEPTH_LIMIT = 0
+DEPTH_STATS = True
+
+RETRY_ENABLED = True
+RETRY_TIMES = 10
+
+DOWNLOAD_TIMEOUT = 180
+DOWNLOAD_DELAY = 0.1
+
+LOG_ENABLED = True
+LOG_LEVEL = 'INFO'
+LOG_STDOUT = True
+LOG_ENCODING = 'utf-8'
+LOG_FILE = None
+
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 5.0
+AUTOTHROTTLE_MAX_DELAY = 60.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 3.0
+AUTOTHROTTLE_DEBUG = True
+
+CONCURRENT_REQUESTS_PER_DOMAIN = 10
+
+FEED_URI = 'file://{}/feeds/%(name)s/%(time)s.jl'.format(os.getcwd())
+FEED_FORMAT = 'jsonlines'
+FEED_EXPORT_ENCODING = 'utf-8'
+FEED_STORE_EMPTY = True
+
+START_URLS = [
+    'http://www---smt-import-20170809-wq4zreq-3faqimkzadf6s.us.platform.sh'
+    '/all-stories?x=1'
+]

@@ -9,7 +9,9 @@ import scrapy
 
 
 class SmtContributorProfileItem(scrapy.Item):
-    """ Represents the content of a Contributor Profile page as a scrapy Item object
+    """
+    Represents the content of a Contributor Profile page as a scrapy Item
+    object.
     """
     page_type = scrapy.Field()
     uid = scrapy.Field()
@@ -22,15 +24,16 @@ class SmtContributorProfileItem(scrapy.Item):
     job_title = scrapy.Field()
     headshot_url = scrapy.Field()
     website = scrapy.Field()
-    facebook_url = scrapy.Field()
-    twitter_url = scrapy.Field()
-    linkedin_url = scrapy.Field()
-    google_url = scrapy.Field()
+    facebook = scrapy.Field()
+    twitter = scrapy.Field()
+    linkedin = scrapy.Field()
+    google = scrapy.Field()
     bio = scrapy.Field()
 
 
 class SmtArticleItem(scrapy.Item):
-    """ Represents the content of an Article page as a scrapy Item object
+    """
+    Represents the content of an Article page as a scrapy Item object.
     """
     page_type = scrapy.Field()
     node_id = scrapy.Field()

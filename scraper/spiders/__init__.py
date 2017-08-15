@@ -1,148 +1,185 @@
-from bs4 import BeautifulSoup
-from scrapy.spiders import CrawlSpider, Rule
-from scrapy.linkextractors import LinkExtractor
+import scrapy
+
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
-from scraper.utils import (
-    get_nodes_to_export_from_db,
-    get_author_urls_from_jl,
-    write_nodes_to_file,
-    get_setting_limits,
-    get_out_dir,
-    get_meta_description,
-    get_author_info,
-    get_story_body,
-    get_author_div_text,
-    get_author_headshot_url,
-    get_author_website_url,
-    get_author_social_urls,
-    get_meta_content,
-)
-from scraper.db_settings import execution_path, site_url
-import logging
+
+USER_FIELD_MAP = {
+    'bio': 'field-name-field-user-biography',
+    'fullname': 'field-name-user-full-name',
+    'company_name': 'field-name-field-user-company-name',
+    'job_title': 'field-name-field-user-job-title'
+}
+
+SOCIAL_NETWORKS = {
+    'facebook':
+        'div.field-name-field-user-facebook-url div.field-item even '
+        'a::attr(href)',
+    'twitter':
+        'div.field-name-field-user-twitter-url div.field-item even '
+        'a::attr(href)',
+    'linkedin':
+        'div.field-name-field-user-linkedin-url div.field-item even '
+        'a::attr(href)',
+    'google':
+        'div.field-name-field-user-google-url div.field-item even '
+        'a::attr(href)',
+}
 
 
-out_dir = get_out_dir()
+class SocialMediaToday(scrapy.Spider):
+    """
+    Spider class for crawling the socialmediatoday.com site story pages. This
+    also looks for author links and parses the author profile pages.
 
-logFormatter = logging.Formatter("%(asctime)s\t[%(levelname)s]\t%(message)s")
-rootLogger = logging.getLogger()
+    Run on the command line with scrapy crawl stories
+    """
+    name = "socialmediatoday"
+    allowed_domains = ['socialmediatoday.com', 'platform.sh']
 
-logging.basicConfig(level=logging.DEBUG)
-fileHandler = logging.FileHandler('%s/log' % out_dir)
-fileHandler.setFormatter(logFormatter)
-rootLogger.addHandler(fileHandler)
+    def start_requests(self):
+        for url in self.settings['START_URLS']:
+            yield scrapy.Request(url, self.parse)
 
-execution_script_path = execution_path
+    def parse(self, response):
+        self.logger.info('Parsing {}'.format(response.url))
 
-ALLOWED_DOMAINS = ['socialmediatoday.com', 'platform.sh']
+        # Look for pagination.
+        next_page = response.css('.pager-next a::attr(href)').extract_first()
+        if next_page is not None:
+            self.logger.info(
+                'Adding a new all-stories page: {}'.format(next_page))
+            yield response.follow(
+                next_page,
+                callback=self.parse
+            )
 
-def update_url_feed(url, spider):
-    logging.info("parsed url: %s" % url)
+        # Parse the rows. Add node and user pages
+        rows = response.css('tr.scrapy-node')
 
+        for row in rows:
+            node_link = row.css('td.scrapy-node-id a')
+            user_link = row.css('td.scrapy-user-id a')
 
-class SmtStories(CrawlSpider):
-    ''' CrawlSpider class for crawling the socialmediatoday.com site story pages
+            node_url = node_link.css('::attr(href)').extract_first()
+            user_url = user_link.css('::attr(href)').extract_first()
 
-        Crawler is initialized based on command line input, see READEM for
-        details and instructions
-    '''
-    name = "stories"
+            metadata = {
+                'nid': node_link.css('::text').extract_first(),
+                'node_url': node_url,
+                'uid': user_link.css('::text').extract_first(),
+                'user_url': user_url,
+            }
 
-    # get database parameters
-    limit, offset = get_setting_limits()
+            self.logger.info('Adding {} and {}'.format(node_url, user_url))
+            yield response.follow(
+                node_url,
+                callback=self.parse_story_page,
+                meta=metadata
+            )
 
-    # query for the URLs for nodes to scrape in this run
-    db_nodes = get_nodes_to_export_from_db(0, limit=limit, offset=offset)
+            yield response.follow(
+                user_url,
+                callback=self.parse_author_page,
+                meta=metadata
+            )
 
-    # write the URLS for stories to scrape to a local file
-    write_nodes_to_file(db_nodes, 'articles')
+    def parse_story_page(self, response):
+        """
+        Parse a story page and look for author links.
 
-    allowed_domains = ALLOWED_DOMAINS
+        Yields requests for author profile pages and story items.
 
-    # set start URL to the file we wrote
-    start_urls = ["file://%s/articles.html" % execution_script_path]
+        Needs the following from response.meta:
+        nid
+        uid
 
-    rules = [
-        Rule(
-            # article page
-            # follow links on this page
-            LinkExtractor(
-                allow=(
-                    u'\/[a-zA-Z0-9\-\/]+\/[a-zA-Z0-9\-\/]+$',
-                ),
-            ),
-            callback='parse_article_item',
-            follow=False,
-        ),
-    ]
+        """
+        self.logger.info('Parsing story {}'.format(response.url))
 
-    # handle an article page here
-    def parse_article_item(self, response):
-        db_data = self.db_nodes[response.url]
-        html = BeautifulSoup(response.body, 'lxml')
+        head = response.css('head')
+        body = response.css('body')
 
         item = SmtArticleItem()
         item['page_type'] = 'article'
         item['url'] = response.url
-        item['title'] = html.head.title.text
-        item['canonical_url'] = html.head.find('link', rel='canonical')['href']
-        item['meta_description'] = get_meta_description(html)
-        item['story_title'] = html.body.find('section', id='section-content').find('div', property="dc:title").h3.text
-        item['byline'], item['contributor_profile_url'] = get_author_info(html)
-        item['body'] = get_story_body(html)
-        item['node_id'] = db_data['nid']
-        item['contributor_email'] = db_data['user_email']
-        item['contributor_uid'] = db_data['uid']
-        item['legacy_content_type'] = db_data['content_type']
-        item['changed'] = get_meta_content(html, 'article:modified_time', '1776-07-04T06:30:00-00:00')
-        item['pub_date'] = get_meta_content(html, 'article:published_time', '1776-07-04T06:30:00-00:00')
-        update_url_feed(response.url, spider=self)
-        return item
+        item['node_id'] = response.meta['nid']
+        item['title'] = head.css('title::text').extract_first()
+        item['contributor_uid'] = response.meta['uid']
 
+        canonical_url = head.css(
+            'link[rel=canonical]::attr(href)').extract_first()
+        item['canonical_url'] = canonical_url or ''
 
-class SmtAuthors(CrawlSpider):
-    name = 'authors'
-    allowed_domains = ALLOWED_DOMAINS
-    out_dir = get_out_dir()
-    author_info = get_author_urls_from_jl(source_file='%s/stories.jl' % out_dir)
-    write_nodes_to_file(author_info, 'authors')
-    start_urls = ["file://%s/authors.html" % execution_script_path]
-    rules = [
-        Rule(
-            # article page
-            # follow links on this page
-            LinkExtractor(
-                allow=(
-                    u'\/users\/[a-zA-Z0-9\-\/]+$',
-                ),
-            ),
-            callback='parse_author_item',
-            follow=False,
-        ),
-    ]
+        desc = head.css(
+            'meta[name=description]::attr(content)').extract_first()
+        item['meta_description'] = desc or ''
 
-    # handle a contributor profile page here
-    def parse_author_item(self, response):
-        db_data = self.author_info[response.url]
-        html = BeautifulSoup(response.body, "html.parser")
+        changed = head.css(
+            'meta[property="article:modified_time"]::attr(content)')\
+            .extract_first()
+        item['changed'] = changed or ''
+
+        pub_date = head.css(
+            'meta[property="article:published_time"]::attr(content)')\
+            .extract_first()
+        item['pub_date'] = pub_date or ''
+
+        story_title = body.css(
+            'section#section-content div[property="dc:title"] h3::text')\
+            .extract_first()
+        item['story_title'] = story_title or ''
+
+        author_link = body.css(
+            'div.field-name-post-date-author-name .field-item p a')
+        item['byline'] = author_link.css('::text').extract_first() or ''
+        item['contributor_profile_url'] = author_link.css(
+            '::attr(href)').extract_first() or ''
+
+        body_content = body.css(
+            'div.field-name-body div[property="content:encoded"]')\
+            .extract_first()
+        item['body'] = body_content or ''
+
+        yield item
+
+    def parse_author_page(self, response):
+        """
+        Parse an author profile page.
+
+        Needs uid passed in from response.meta.
+        """
+        self.logger.info('Parsing author {}'.format(response.url))
+
+        body = response.css('body')
 
         item = SmtContributorProfileItem()
+        item['uid'] = response.meta['uid']
         item['page_type'] = 'contributor profile'
         item['url'] = response.url
-        item['bio'] = get_author_div_text(html, 'field-name-field-user-biography')
-        item['fullname'] = get_author_div_text(html, 'field-name-user-full-name')
-        item['company_name'] = get_author_div_text(html, 'field-name-field-user-company-name')
-        item['job_title'] = get_author_div_text(html, 'field-name-field-user-job-title')
-        item['headshot_url'] = get_author_headshot_url(html)
-        item['website'] = get_author_website_url(html)
 
-        social_link_urls = get_author_social_urls(html)
-        item['facebook_url'] = social_link_urls['facebook']
-        item['twitter_url'] = social_link_urls['twitter']
-        item['linkedin_url'] = social_link_urls['linkedin']
-        item['google_url'] = social_link_urls['google']
-        item['email'] = db_data['email']
-        item['uid'] = db_data['uid']
+        for item_key, field_key in USER_FIELD_MAP.items():
+            # Default to empty string.
+            item[item_key] = ''
+            full_selector = 'div.{} div.field-item::text'.format(field_key)
+            field_value = body.css(full_selector).extract_first()
+            if field_value:
+                item[item_key] = field_value.strip()
 
-        update_url_feed(response.url, spider=self)
+        headshot_url = body.css(
+            'div.field-name-ds-user-picture img::attr(src)').extract_first()
+        item['headshot_url'] = headshot_url or ''
 
-        return item
+        website = body.css(
+            'div.field-name-field-user-website .field-item a::attr(href)')\
+            .extract_first()
+        item['website'] = website or ''
+
+        for network_key, selector in SOCIAL_NETWORKS.items():
+            # Default to empty string.
+            item[network_key] = ''
+
+            href = body.css(selector).extract_first()
+
+            if href:
+                item[network_key] = href.strip()
+
+        yield item
