@@ -164,16 +164,16 @@ class SocialMediaToday(scrapy.Spider):
             if field_value:
                 item[item_key] = field_value.strip()
 
-        bio = body.css('.field-name-field-user-biography div div::text').extract_first()
+        bio = body.css('.field-name-field-user-biography div div::text').extract_first() or ''
         fullname = body.css('.field-name-user-full-name div div a strong::text').extract_first() + response.css(
             '.field-name-user-full-name div div a::text'
-        ).extract_first()
-        job_title = body.css('.field-name-field-user-job-title div div.field-item::text').extract_first()
-        company_name = body.css('.field-name-field-user-company-name div.field-item::text').extract_first()
-        twitter = body.css('.field-name-field-user-twitter-url div div.field-item a::text').extract_first()
-        facebook = body.css('.field-name-field-user-facebook-url div div.field-item a::text').extract_first()
-        linkedin = body.css('.field-name-field-user-linkedin-url div div.field-item a::text').extract_first()
-        google = body.css('.field-name-field-user-google-url div div.field-item a::text').extract_first()
+        ).extract_first() or ''
+        job_title = body.css('.field-name-field-user-job-title div div.field-item::text').extract_first() or ''
+        company_name = body.css('.field-name-field-user-company-name div.field-item::text').extract_first() or ''
+        twitter = body.css('.field-name-field-user-twitter-url div div.field-item a::text').extract_first() or ''
+        facebook = body.css('.field-name-field-user-facebook-url div div.field-item a::text').extract_first() or ''
+        linkedin = body.css('.field-name-field-user-linkedin-url div div.field-item a::text').extract_first() or ''
+        google = body.css('.field-name-field-user-google-url div div.field-item a::text').extract_first() or ''
 
         item['google'] = google.strip()
         item['linkedin'] = linkedin.strip()
