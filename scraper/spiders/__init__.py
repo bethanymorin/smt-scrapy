@@ -11,17 +11,13 @@ USER_FIELD_MAP = {
 
 SOCIAL_NETWORKS = {
     'facebook':
-        'div.field-name-field-user-facebook-url div.field-item even '
-        'a::attr(href)',
+        'div.field-name-field-user-facebook-url div.field-item a::attr(href)',
     'twitter':
-        'div.field-name-field-user-twitter-url div.field-item even '
-        'a::attr(href)',
+        'div.field-name-field-user-twitter-url div.field-item a::attr(href)',
     'linkedin':
-        'div.field-name-field-user-linkedin-url div.field-item even '
-        'a::attr(href)',
+        'div.field-name-field-user-linkedin-url div.field-item a::attr(href)',
     'google':
-        'div.field-name-field-user-google-url div.field-item even '
-        'a::attr(href)',
+        'div.field-name-field-user-google-url div.field-item a::attr(href)',
 }
 
 
