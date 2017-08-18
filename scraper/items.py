@@ -50,3 +50,4 @@ class SmtArticleItem(scrapy.Item):
     contributor_email = scrapy.Field()
     contributor_uid = scrapy.Field()
     legacy_content_type = scrapy.Field()
+    category = scrapy.Field()

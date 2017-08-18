@@ -62,11 +62,14 @@ class SocialMediaToday(scrapy.Spider):
             node_url = node_link.css('::attr(href)').extract_first()
             user_url = user_link.css('::attr(href)').extract_first()
 
+            category = row.css('.scrapy-category a::text').extract_first()
+
             metadata = {
                 'nid': node_link.css('::text').extract_first(),
                 'node_url': node_url,
                 'uid': user_link.css('::text').extract_first(),
                 'user_url': user_url,
+                'category': category,
             }
 
             self.logger.info('Adding {} and {}'.format(node_url, user_url))
@@ -104,6 +107,8 @@ class SocialMediaToday(scrapy.Spider):
         item['node_id'] = response.meta['nid']
         item['title'] = head.css('title::text').extract_first()
         item['contributor_uid'] = response.meta['uid']
+
+        item['category'] = response.meta['category'] or ''
 
         canonical_url = head.css(
             'link[rel=canonical]::attr(href)').extract_first()
