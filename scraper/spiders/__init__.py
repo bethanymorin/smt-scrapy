@@ -159,7 +159,7 @@ class SocialMediaToday(scrapy.Spider):
         for item_key, field_key in USER_FIELD_MAP.items():
             # Default to empty string.
             item[item_key] = ''
-            full_selector = 'div.{} div.field-item::text'.format(field_key)
+            full_selector = 'div.{} div.field-item'.format(field_key)
             field_value = body.css(full_selector).extract_first()
             if field_value:
                 item[item_key] = field_value.strip()
