@@ -2,12 +2,6 @@ import scrapy
 
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
 
-USER_FIELD_MAP = {
-    'bio': 'field-name-field-user-biography',
-    'fullname': 'field-name-user-full-name',
-    'company_name': 'field-name-field-user-company-name',
-    'job_title': 'field-name-field-user-job-title'
-}
 
 SOCIAL_NETWORKS = {
     'facebook':
@@ -157,30 +151,30 @@ class SocialMediaToday(scrapy.Spider):
         item['page_type'] = 'contributor profile'
         item['url'] = response.url
 
-        for item_key, field_key in USER_FIELD_MAP.items():
-            # Default to empty string.
-            item[item_key] = ''
-            full_selector = 'div.{} div.field-item'.format(field_key)
-            field_value = body.css(full_selector).extract_first()
-            if field_value:
-                item[item_key] = field_value.strip()
+        first_name = body.css('.scrapy-first-name::text').extract_first() or ''
+        item['first_name'] = first_name.strip()
 
-        headshot_url = body.css(
-            'div.field-name-ds-user-picture img::attr(src)').extract_first()
-        item['headshot_url'] = headshot_url or ''
+        last_name = body.css('.scrapy-last-name::text').extract_first() or ''
+        item['last_name'] = last_name.strip()
 
-        website = body.css(
-            'div.field-name-field-user-website .field-item a::attr(href)')\
-            .extract_first()
-        item['website'] = website or ''
+        company_name = body.css('.field-name-field-user-company-name .field-item::text').extract_first() or ''
+        item['company_name'] = company_name.strip()
+
+        job_title = body.css('.field-name-field-user-job-title .field-item::text').extract_first() or ''
+        item['job_title'] = job_title.strip()
+
+        headshot_url = body.css('.field-name-ds-user-picture img::attr(src)').extract_first() or ''
+        item['headshot_url'] = headshot_url.strip()
+
+        website = body.css('.field-name-field-user-website .field-item a::attr(href)').extract_first() or ''
+        item['website'] = website.strip()
+
+        # This is the only html field.
+        bio = body.css('.field-name-field-user-biography .field-item').extract_first() or ''
+        item['bio'] = bio.strip()
 
         for network_key, selector in SOCIAL_NETWORKS.items():
-            # Default to empty string.
-            item[network_key] = ''
-
-            href = body.css(selector).extract_first()
-
-            if href:
-                item[network_key] = href.strip()
+            href = body.css(selector).extract_first() or ''
+            item[network_key] = href.strip()
 
         yield item
