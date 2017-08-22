@@ -2,22 +2,12 @@ import scrapy
 
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
 
-USER_FIELD_MAP = {
-    'bio': 'field-name-field-user-biography',
-    'fullname': 'field-name-user-full-name',
-    'company_name': 'field-name-field-user-company-name',
-    'job_title': 'field-name-field-user-job-title'
-}
 
+# Twitter gets special treatment below.
 SOCIAL_NETWORKS = {
-    'facebook':
-        'div.field-name-field-user-facebook-url div.field-item a::attr(href)',
-    'twitter':
-        'div.field-name-field-user-twitter-url div.field-item a::attr(href)',
-    'linkedin':
-        'div.field-name-field-user-linkedin-url div.field-item a::attr(href)',
-    'google':
-        'div.field-name-field-user-google-url div.field-item a::attr(href)',
+    'facebook': 'div.field-name-field-user-facebook-url div.field-item a::attr(href)',
+    'linkedin': 'div.field-name-field-user-linkedin-url div.field-item a::attr(href)',
+    'google': 'div.field-name-field-user-google-url div.field-item a::attr(href)',
 }
 
 
@@ -94,6 +84,7 @@ class SocialMediaToday(scrapy.Spider):
         """
         self.logger.info('Parsing story {}'.format(response.url))
 
+        # Shortcuts to the head and body html tags.
         head = response.css('head')
         body = response.css('body')
 
@@ -101,44 +92,26 @@ class SocialMediaToday(scrapy.Spider):
         item['page_type'] = 'article'
         item['url'] = response.url
         item['node_id'] = response.meta['nid']
-        item['title'] = head.css('title::text').extract_first()
         item['contributor_uid'] = response.meta['uid']
-
         item['category'] = response.meta['category'] or ''
 
-        canonical_url = head.css(
-            'link[rel=canonical]::attr(href)').extract_first()
-        item['canonical_url'] = canonical_url or ''
+        title = head.css('title::text').extract_first() or ''
+        # Remove the site name and pipe from the page title.
+        title = title.replace(' | Social Media Today', '')
+        item['title'] = title.strip()
 
-        desc = head.css(
-            'meta[name=description]::attr(content)').extract_first()
-        item['meta_description'] = desc or ''
+        canonical_url = head.css('link[rel=canonical]::attr(href)').extract_first() or ''
+        item['canonical_url'] = canonical_url.strip()
 
-        changed = head.css(
-            'meta[property="article:modified_time"]::attr(content)')\
-            .extract_first()
-        item['changed'] = changed or ''
+        pub_date = head.css('meta[property="article:published_time"]::attr(content)').extract_first() or ''
+        item['pub_date'] = pub_date.strip()
 
-        pub_date = head.css(
-            'meta[property="article:published_time"]::attr(content)')\
-            .extract_first()
-        item['pub_date'] = pub_date or ''
+        author_link = body.css('div.field-name-post-date-author-name .field-item p a')
+        byline = author_link.css('::text').extract_first() or ''
+        item['byline'] = byline.strip()
 
-        story_title = body.css(
-            'section#section-content div[property="dc:title"] h3::text')\
-            .extract_first()
-        item['story_title'] = story_title or ''
-
-        author_link = body.css(
-            'div.field-name-post-date-author-name .field-item p a')
-        item['byline'] = author_link.css('::text').extract_first() or ''
-        item['contributor_profile_url'] = author_link.css(
-            '::attr(href)').extract_first() or ''
-
-        body_content = body.css(
-            'div.field-name-body div[property="content:encoded"]')\
-            .extract_first()
-        item['body'] = body_content or ''
+        body_content = body.css('div.field-name-body div[property="content:encoded"]').extract_first() or ''
+        item['body'] = body_content.strip()
 
         yield item
 
@@ -150,37 +123,51 @@ class SocialMediaToday(scrapy.Spider):
         """
         self.logger.info('Parsing author {}'.format(response.url))
 
+        # Shortcut to the html body tag.
         body = response.css('body')
 
         item = SmtContributorProfileItem()
-        item['uid'] = response.meta['uid']
         item['page_type'] = 'contributor profile'
+        item['uid'] = response.meta['uid']
         item['url'] = response.url
 
-        for item_key, field_key in USER_FIELD_MAP.items():
-            # Default to empty string.
-            item[item_key] = ''
-            full_selector = 'div.{} div.field-item'.format(field_key)
-            field_value = body.css(full_selector).extract_first()
-            if field_value:
-                item[item_key] = field_value.strip()
+        # First name is plain text.
+        first_name = body.css('.scrapy-first-name::text').extract_first() or ''
+        item['first_name'] = first_name.strip()
 
-        headshot_url = body.css(
-            'div.field-name-ds-user-picture img::attr(src)').extract_first()
-        item['headshot_url'] = headshot_url or ''
+        # Last name is plain text.
+        last_name = body.css('.scrapy-last-name::text').extract_first() or ''
+        item['last_name'] = last_name.strip()
 
-        website = body.css(
-            'div.field-name-field-user-website .field-item a::attr(href)')\
-            .extract_first()
-        item['website'] = website or ''
+        # Company name is plain text.
+        company_name = body.css('.field-name-field-user-company-name .field-item::text').extract_first() or ''
+        item['company_name'] = company_name.strip()
 
+        # Job title is plain text.
+        job_title = body.css('.field-name-field-user-job-title .field-item::text').extract_first() or ''
+        item['job_title'] = job_title.strip()
+
+        # Absolute URL field.
+        headshot_url = body.css('.field-name-ds-user-picture img::attr(src)').extract_first() or ''
+        item['headshot_url'] = headshot_url.strip()
+
+        # Absolute URL field.
+        website = body.css('.field-name-field-user-website .field-item a::attr(href)').extract_first() or ''
+        item['website'] = website.strip()
+
+        # Bio is the only html field.
+        bio = body.css('.field-name-field-user-biography .field-item').extract_first() or ''
+        item['bio'] = bio.strip()
+
+        # Absolute URL fields.
         for network_key, selector in SOCIAL_NETWORKS.items():
-            # Default to empty string.
-            item[network_key] = ''
+            href = body.css(selector).extract_first() or ''
+            item[network_key] = href.strip()
 
-            href = body.css(selector).extract_first()
-
-            if href:
-                item[network_key] = href.strip()
+        # Get the twitter URL and cut it down to just the handle because that's what we expect in divesite.
+        twitter_selector = 'div.field-name-field-user-twitter-url div.field-item a::attr(href)'
+        twitter_url = body.css(twitter_selector).extract_first() or ''
+        twitter_handle = twitter_url.replace('https://twitter.com/', '').split('?')[0]
+        item['twitter_handle'] = twitter_handle.strip()
 
         yield item
