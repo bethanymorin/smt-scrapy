@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 import scrapy
 
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
@@ -167,7 +168,8 @@ class SocialMediaToday(scrapy.Spider):
         # Get the twitter URL and cut it down to just the handle because that's what we expect in divesite.
         twitter_selector = 'div.field-name-field-user-twitter-url div.field-item a::attr(href)'
         twitter_url = body.css(twitter_selector).extract_first() or ''
-        twitter_handle = twitter_url.replace('https://twitter.com/', '').split('?')[0]
+        twitter_parser = urlparse(twitter_url.strip())
+        twitter_handle = twitter_parser.path.strip('/')
         item['twitter_handle'] = twitter_handle.strip()
 
         yield item
