@@ -3,9 +3,9 @@ import scrapy
 from scraper.items import SmtArticleItem, SmtContributorProfileItem
 
 
+# Twitter gets special treatment below.
 SOCIAL_NETWORKS = {
     'facebook': 'div.field-name-field-user-facebook-url div.field-item a::attr(href)',
-    'twitter': 'div.field-name-field-user-twitter-url div.field-item a::attr(href)',
     'linkedin': 'div.field-name-field-user-linkedin-url div.field-item a::attr(href)',
     'google': 'div.field-name-field-user-google-url div.field-item a::attr(href)',
 }
@@ -96,6 +96,8 @@ class SocialMediaToday(scrapy.Spider):
         item['category'] = response.meta['category'] or ''
 
         title = head.css('title::text').extract_first() or ''
+        # Remove the site name and pipe from the page title.
+        title = title.replace(' | Social Media Today', '')
         item['title'] = title.strip()
 
         canonical_url = head.css('link[rel=canonical]::attr(href)').extract_first() or ''
@@ -172,5 +174,11 @@ class SocialMediaToday(scrapy.Spider):
         for network_key, selector in SOCIAL_NETWORKS.items():
             href = body.css(selector).extract_first() or ''
             item[network_key] = href.strip()
+
+        # Get the twitter URL and cut it down to just the handle because that's what we expect in divesite.
+        twitter_selector = 'div.field-name-field-user-twitter-url div.field-item a::attr(href)'
+        twitter_url = body.css(twitter_selector).extract_first() or ''
+        twitter_handle = twitter_url.replace('https://twitter.com/', '').split('?')[0]
+        item['twitter_handle'] = twitter_handle.strip()
 
         yield item
