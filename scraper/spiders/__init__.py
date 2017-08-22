@@ -4,14 +4,10 @@ from scraper.items import SmtArticleItem, SmtContributorProfileItem
 
 
 SOCIAL_NETWORKS = {
-    'facebook':
-        'div.field-name-field-user-facebook-url div.field-item a::attr(href)',
-    'twitter':
-        'div.field-name-field-user-twitter-url div.field-item a::attr(href)',
-    'linkedin':
-        'div.field-name-field-user-linkedin-url div.field-item a::attr(href)',
-    'google':
-        'div.field-name-field-user-google-url div.field-item a::attr(href)',
+    'facebook': 'div.field-name-field-user-facebook-url div.field-item a::attr(href)',
+    'twitter': 'div.field-name-field-user-twitter-url div.field-item a::attr(href)',
+    'linkedin': 'div.field-name-field-user-linkedin-url div.field-item a::attr(href)',
+    'google': 'div.field-name-field-user-google-url div.field-item a::attr(href)',
 }
 
 
@@ -88,6 +84,7 @@ class SocialMediaToday(scrapy.Spider):
         """
         self.logger.info('Parsing story {}'.format(response.url))
 
+        # Shortcuts to the head and body html tags.
         head = response.css('head')
         body = response.css('body')
 
@@ -95,44 +92,35 @@ class SocialMediaToday(scrapy.Spider):
         item['page_type'] = 'article'
         item['url'] = response.url
         item['node_id'] = response.meta['nid']
-        item['title'] = head.css('title::text').extract_first()
         item['contributor_uid'] = response.meta['uid']
-
         item['category'] = response.meta['category'] or ''
 
-        canonical_url = head.css(
-            'link[rel=canonical]::attr(href)').extract_first()
-        item['canonical_url'] = canonical_url or ''
+        title = head.css('title::text').extract_first() or ''
+        item['title'] = title.strip()
 
-        desc = head.css(
-            'meta[name=description]::attr(content)').extract_first()
-        item['meta_description'] = desc or ''
+        canonical_url = head.css('link[rel=canonical]::attr(href)').extract_first() or ''
+        item['canonical_url'] = canonical_url.strip()
 
-        changed = head.css(
-            'meta[property="article:modified_time"]::attr(content)')\
-            .extract_first()
-        item['changed'] = changed or ''
+        desc = head.css('meta[name=description]::attr(content)').extract_first() or ''
+        item['meta_description'] = desc.strip()
 
-        pub_date = head.css(
-            'meta[property="article:published_time"]::attr(content)')\
-            .extract_first()
-        item['pub_date'] = pub_date or ''
+        changed = head.css('meta[property="article:modified_time"]::attr(content)').extract_first() or ''
+        item['changed'] = changed.strip()
 
-        story_title = body.css(
-            'section#section-content div[property="dc:title"] h3::text')\
-            .extract_first()
-        item['story_title'] = story_title or ''
+        pub_date = head.css('meta[property="article:published_time"]::attr(content)').extract_first() or ''
+        item['pub_date'] = pub_date.strip()
 
-        author_link = body.css(
-            'div.field-name-post-date-author-name .field-item p a')
-        item['byline'] = author_link.css('::text').extract_first() or ''
-        item['contributor_profile_url'] = author_link.css(
-            '::attr(href)').extract_first() or ''
+        story_title = body.css('section#section-content div[property="dc:title"] h3::text').extract_first() or ''
+        item['story_title'] = story_title.strip()
 
-        body_content = body.css(
-            'div.field-name-body div[property="content:encoded"]')\
-            .extract_first()
-        item['body'] = body_content or ''
+        author_link = body.css('div.field-name-post-date-author-name .field-item p a')
+        byline = author_link.css('::text').extract_first() or ''
+        item['byline'] = byline.strip()
+        contributor_profile_url = author_link.css('::attr(href)').extract_first() or ''
+        item['contributor_profile_url'] = contributor_profile_url.strip()
+
+        body_content = body.css('div.field-name-body div[property="content:encoded"]').extract_first() or ''
+        item['body'] = body_content.strip()
 
         yield item
 
@@ -144,6 +132,7 @@ class SocialMediaToday(scrapy.Spider):
         """
         self.logger.info('Parsing author {}'.format(response.url))
 
+        # Shortcut to the html body tag.
         body = response.css('body')
 
         item = SmtContributorProfileItem()
@@ -151,28 +140,35 @@ class SocialMediaToday(scrapy.Spider):
         item['page_type'] = 'contributor profile'
         item['url'] = response.url
 
+        # First name is plain text.
         first_name = body.css('.scrapy-first-name::text').extract_first() or ''
         item['first_name'] = first_name.strip()
 
+        # Last name is plain text.
         last_name = body.css('.scrapy-last-name::text').extract_first() or ''
         item['last_name'] = last_name.strip()
 
+        # Company name is plain text.
         company_name = body.css('.field-name-field-user-company-name .field-item::text').extract_first() or ''
         item['company_name'] = company_name.strip()
 
+        # Job title is plain text.
         job_title = body.css('.field-name-field-user-job-title .field-item::text').extract_first() or ''
         item['job_title'] = job_title.strip()
 
+        # Absolute URL field.
         headshot_url = body.css('.field-name-ds-user-picture img::attr(src)').extract_first() or ''
         item['headshot_url'] = headshot_url.strip()
 
+        # Absolute URL field.
         website = body.css('.field-name-field-user-website .field-item a::attr(href)').extract_first() or ''
         item['website'] = website.strip()
 
-        # This is the only html field.
+        # Bio is the only html field.
         bio = body.css('.field-name-field-user-biography .field-item').extract_first() or ''
         item['bio'] = bio.strip()
 
+        # Absolute URL fields.
         for network_key, selector in SOCIAL_NETWORKS.items():
             href = body.css(selector).extract_first() or ''
             item[network_key] = href.strip()
