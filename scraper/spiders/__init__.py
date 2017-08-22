@@ -103,28 +103,12 @@ class SocialMediaToday(scrapy.Spider):
         canonical_url = head.css('link[rel=canonical]::attr(href)').extract_first() or ''
         item['canonical_url'] = canonical_url.strip()
 
-        # We don't use meta description in the import at all.
-        # desc = head.css('meta[name=description]::attr(content)').extract_first() or ''
-        # item['meta_description'] = desc.strip()
-
-        # We don't use changed in the import at all.
-        # changed = head.css('meta[property="article:modified_time"]::attr(content)').extract_first() or ''
-        # item['changed'] = changed.strip()
-
         pub_date = head.css('meta[property="article:published_time"]::attr(content)').extract_first() or ''
         item['pub_date'] = pub_date.strip()
-
-        # We don't use the story_title in the import at all.
-        # story_title = body.css('section#section-content div[property="dc:title"] h3::text').extract_first() or ''
-        # item['story_title'] = story_title.strip()
 
         author_link = body.css('div.field-name-post-date-author-name .field-item p a')
         byline = author_link.css('::text').extract_first() or ''
         item['byline'] = byline.strip()
-
-        # We don't use this in the import.
-        # contributor_profile_url = author_link.css('::attr(href)').extract_first() or ''
-        # item['contributor_profile_url'] = contributor_profile_url.strip()
 
         body_content = body.css('div.field-name-body div[property="content:encoded"]').extract_first() or ''
         item['body'] = body_content.strip()
