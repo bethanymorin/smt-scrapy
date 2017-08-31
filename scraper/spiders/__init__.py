@@ -92,6 +92,10 @@ class SocialMediaToday(scrapy.Spider):
         item = SmtArticleItem()
         item['page_type'] = 'article'
         item['url'] = response.url
+
+        url_parser = urlparse(response.url)
+        item['url_path'] = url_parser.path
+
         item['node_id'] = response.meta['nid']
         item['contributor_uid'] = response.meta['uid']
         item['category'] = response.meta['category'] or ''
@@ -131,6 +135,9 @@ class SocialMediaToday(scrapy.Spider):
         item['page_type'] = 'contributor profile'
         item['uid'] = response.meta['uid']
         item['url'] = response.url
+
+        url_parser = urlparse(response.url)
+        item['url_path'] = url_parser.path
 
         # First name is plain text.
         first_name = body.css('.scrapy-first-name::text').extract_first() or ''

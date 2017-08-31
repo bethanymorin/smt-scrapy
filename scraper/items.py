@@ -14,6 +14,7 @@ class SmtArticleItem(scrapy.Item):
     """
     page_type = scrapy.Field()
     url = scrapy.Field()
+    url_path = scrapy.Field()
     node_id = scrapy.Field()
     contributor_uid = scrapy.Field()
     category = scrapy.Field()
@@ -32,6 +33,7 @@ class SmtContributorProfileItem(scrapy.Item):
     page_type = scrapy.Field()
     uid = scrapy.Field()
     url = scrapy.Field()
+    url_path = scrapy.Field()
     first_name = scrapy.Field()
     last_name = scrapy.Field()
     company_name = scrapy.Field()
