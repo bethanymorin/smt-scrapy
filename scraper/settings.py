@@ -128,5 +128,5 @@ FEED_EXPORT_ENCODING = 'utf-8'
 FEED_STORE_EMPTY = True
 
 START_URLS = [
-    'http://www.socialmediatoday.com/all-stories?x=3'
+    'http://varnish.socialmediatoday.com/all-stories?x=4'
 ]
