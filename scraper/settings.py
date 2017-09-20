@@ -128,5 +128,5 @@ FEED_EXPORT_ENCODING = 'utf-8'
 FEED_STORE_EMPTY = True
 
 START_URLS = [
-    'http://direct---import-20170821-sirgvpy-3faqimkzadf6s.us.platform.sh/all-stories?x=2'
+    'http://www.socialmediatoday.com/all-stories?x=3'
 ]
