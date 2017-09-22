@@ -23,6 +23,7 @@ class SmtArticleItem(scrapy.Item):
     pub_date = scrapy.Field()
     byline = scrapy.Field()
     body = scrapy.Field()
+    teaser = scrapy.Field()
 
 
 class SmtContributorProfileItem(scrapy.Item):

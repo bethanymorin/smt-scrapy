@@ -50,6 +50,8 @@ class SocialMediaToday(scrapy.Spider):
             user_url = user_link.css('::attr(href)').extract_first()
 
             category = row.css('.scrapy-category a::text').extract_first()
+            # Join the paragraphs inside the teaser td.
+            teaser = ''.join(row.css('.scrapy-teaser p').extract())
 
             metadata = {
                 'nid': node_link.css('::text').extract_first(),
@@ -57,6 +59,7 @@ class SocialMediaToday(scrapy.Spider):
                 'uid': user_link.css('::text').extract_first(),
                 'user_url': user_url,
                 'category': category,
+                'teaser': teaser,
             }
 
             self.logger.info('Adding {} and {}'.format(node_url, user_url))
@@ -98,6 +101,7 @@ class SocialMediaToday(scrapy.Spider):
 
         item['node_id'] = response.meta['nid']
         item['contributor_uid'] = response.meta['uid']
+        item['teaser'] = response.meta['teaser'] or ''
         item['category'] = response.meta['category'] or ''
 
         title = head.css('title::text').extract_first() or ''
