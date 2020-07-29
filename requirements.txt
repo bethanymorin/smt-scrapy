@@ -28,7 +28,7 @@ pyasn1==0.3.2
 pycparser==2.18
 PyDispatcher==2.0.5
 Pygments==2.2.0
-pyOpenSSL==17.2.0
+pyOpenSSL==17.5.0
 PyYAML==3.12
 queuelib==1.4.2
 requests==2.18.4
